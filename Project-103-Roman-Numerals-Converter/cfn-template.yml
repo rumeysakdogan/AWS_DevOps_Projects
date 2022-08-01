@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+    CloudFormation Template for Roman Numerals Converter Application. This template creates Python Flask Web Application on Amazon Linux 2 (ami-0022f774911c1d690) EC2 Instance with custom security group allowing http connections on port 80 and SSH connection on port 22. Roman Numerals Converter Application is downloaded from Github repository, then installed on Flask.
+Parameters:
+  KeyName:
+    Description: Enter the name of your Key Pair for SSH connections. Rihanna says Work! Work! Work!
+    Type: AWS::EC2::KeyPair::KeyName
+  
+Resources:
+  WebServerSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable HTTP for Flask Web Server and SSH port to secure reach to my EC2 #required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp #required
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  WebServerHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0022f774911c1d690
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub Web Server of ${AWS::StackName} Stack 
+      UserData: !Base64 |
+          #! /bin/bash
+          yum update -y
+          yum install python3 -y 
+          pip3 install flask
+          cd /home/ec2-user
+          FOLDER="https://raw.githubusercontent.com/rumeysakdogan/AWS_DevOps_Projects/main/Project-103-Roman-Numerals-Converter"
+          wget ${FOLDER}/app.py
+          mkdir templates && cd templates
+          wget ${FOLDER}/templates/index.html
+          wget ${FOLDER}/templates/result.html
+          cd ..
+          python3 app.py
+
+
+Outputs: 
+  WebsiteURL:
+    Value: !Sub 
+      - http://${PublicAddress}
+      - PublicAddress: !GetAtt WebServerHost.PublicDnsName
+    Description: Roman Numerals Converter Application URL

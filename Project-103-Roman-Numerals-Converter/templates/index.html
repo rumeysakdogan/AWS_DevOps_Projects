@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clarusway Project - 001</title>
+  <style>
+    body {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    div {
+      margin-top: 100px;
+      margin-bottom: 50px;
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    img {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 15px;
+      margin: 20px 0;
+      display: inline-block;
+      border: none;
+      background: #f1f1f1;
+    }
+
+    button {
+      box-sizing: border-box;
+      background-color: #4caf50;
+      color: white;
+      padding: 16px 20px;
+      margin: 8px 0;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      opacity: 0.9;
+    }
+
+    .warning {
+      color: red;
+    }
+
+    .footnote{
+      color: rgba(0, 0, 255, 0.712);
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div><img src="https://clarusway.com/wp-content/uploads/2020/06/clarusway_logo.png" /></div>
+
+  <h2>Project : Roman Numerals Converter Application</h2>
+  <p>This application converts decimal numbers to Roman numerals. Only numbers from 1 to 3999 are allowed.</p><br>
+
+  <form action="/" method="post">
+    <label for="number"><b>Please enter a number:</b></label>
+    <input placeholder="50" name="number" id="number" required />
+    <button type="submit">Submit</button>
+    {% if not_valid %}
+    <p class="warning"><b>Not Valid! Please enter a number between 1 and 3999, inclusively.</b></p>
+    {% endif %}
+  </form>
+
+  <p class="footnote"><i>This app is developed in Python by <b>{{ developer_name }}</b> and deployed with Flask on AWS EC2 Instance using AWS Clouldformation Service.</i></p>
+</body>
+
+</html>
