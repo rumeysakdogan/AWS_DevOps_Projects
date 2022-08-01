@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container card" style="width: 40rem;">
+    <img src="{{ object.image.url }}" class="card-img-top" alt="post_image">
+    <div class="card-body">
+        <h2 class="card-title">{{ object.title }}</h2>
+        <hr>
+        <div>
+            <span><i class="far fa-comment-alt ml-2"></i></i> {{ object.comment_count }}</span>
+            <span><i class="fas fa-eye ml-2"></i> {{ object.view_count }}</span>
+            <span><i class="far fa-heart ml-2"></i> {{ object.like_count }}</span>
+            <span class="float-right"> <small>Posted {{ object.publish_date|timesince }} ago.</small> </span>
+        </div>
+        <hr>
+        <p class="card-text">{{ object.content }}.</p>
+        <hr>
+        <div>
+            <h4>Enjoy this post? Give it a LIKE!!</h4>
+        </div>
+
+        <div>
+            <form action="{% url 'blog:like' object.slug %}" method="POST">
+
+                {% csrf_token %}
+                <input type="hidden" name="post">
+                <input type="hidden" name="user">
+
+
+                <button type="submit"><i class="far fa-heart fa-lg"></i></button>
+                {{object.like_count }}
+            </form>
+            <hr>
+            <!-- {% if user.is_authenticated %} -->
+            <h4>Leave a comment below</h4>
+            <form action="" method="POST">
+                {% csrf_token %}
+                {{form|crispy}}
+                <button class="btn btn-secondary btn-sm mt-1 mb-1">SEND</button>
+            </form>
+            <hr>
+            <h4>Comments</h4>
+            {% for comment in object.comments %}
+            <div>
+                <p>
+                    <small><b>Comment by {{user.username}}</b></small> - <small>{{ comment.time_stamp|timesince }} ago.
+                    </small>
+                </p>
+                <p>
+                    {{ comment.content }}
+
+                </p>
+            </div>
+            <hr>
+            {% endfor %}
+            <!-- {% else %} -->
+            <!-- <a href="#" class="btn btn-primary btn-block">Login to comment</a> -->
+            <!-- {% endif %} -->
+        </div>
+
+    </div>
+
+    <div class="m-3">
+        {% if user.id == object.author.id %}
+        <a href="{% url 'blog:update' object.slug %}" class="btn btn-info">Edit</a>
+        <a href="{% url 'blog:delete' object.slug %}" class="btn btn-danger">Delete</a>
+        {% endif %}
+    </div>
+    {% endblock content %}

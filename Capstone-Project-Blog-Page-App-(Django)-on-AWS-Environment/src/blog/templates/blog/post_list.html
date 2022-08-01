@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 style="text-align: center;">Clarusway Blog</h1>
+<div class="row mt-5">
+    {% for obj in object_list %}
+    <div class="col-4">
+
+        <div class="card shadow p-3 mb-5 bg-white rounded" style="width: 18rem; height: 25rem;">
+            <img src="{{ obj.image.url }}" class="card-img-top" alt="post_image">
+            <hr>
+            <div class="card-body">
+                <h5 class="card-title"><a href="{% url 'blog:detail' obj.slug %}">{{obj.title}}</a></h5>
+                <p class="card-text">{{obj.content|truncatechars:20}}</p>
+                <p>
+                    <span><i class="far fa-comment-alt ml-2"></i> {{ obj.comment_count }}</span>
+                    <span><i class="fas fa-eye ml-2"></i> {{ obj.view_count }}</span>
+                    <span><i class="far fa-heart ml-2"></i> {{ obj.like_count }}</span>
+                <p class="card-text"><small>
+                        Posted {{ obj.publish_date|timesince }} ago.
+                    </small>
+                </p>
+
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {% endfor %}
+</div>
+{% endblock content %}

@@ -1,0 +1,618 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  AWS Capstone Project
+
+Parameters:
+
+  KeyPair:
+    Description: Select your key pair
+    Type: AWS::EC2::KeyPair::KeyName 
+
+  DomainName:
+    Description: "Enter your Registered Domain Name"
+    Type: String
+    AllowedPattern: (?!-)[a-zA-Z0-9-.*]{1,63}(?<!-)
+
+  SubDomainName:
+    Description: "Enter your blog page SubDomain Name (e.g. if it's blog.janescloud.net, 'blog' is subdomain - enter only 'blog')"
+    Type: String
+    AllowedPattern: (?!-)[a-zA-Z0-9-.*]{1,63}(?<!-)
+
+  MyCertificateARN:
+    Description: Enter your certificate ARN (AWS Certificate Manager -> Certificates -> Certificate ID)
+    Type: "String"
+    
+# !!! UNCOMMENT THIS PART IF YOU DON'T WANT TO HARDCODE DB PASSWORD WITHIN RDS PART BELOW  !!! 
+# >>> DO NOT FORGET TO UPDATE/MODIFY PASSWORD WITHIN SETTINGS.PY FILE <<<
+#
+#  RDSdbPWD:
+#    Description: Enter the password for RDS databse (e.g. Clarusway1234)
+#    Type: String 
+#    NoEcho: true
+
+# !!! UNCOMMENT THIS PART ONLY IF YOU HAVE NOT YET REQUESTED ANY CERTIFICATE !!! 
+#  
+#  DomainName:
+#    Description: Select Zone ID of existing Amazon Route 53 hosted zone
+#    Type: AWS::Route53::HostedZone::Id
+#
+# >>> DO NOT FORGET TO MODIFY CertificateArn WITHIN ALBListener <<<
+#  BlogDomainName:
+#    Description: "Request a certificate for your/all subdomain(s), e.g. blog.<YourDNSname> OR *.<YourDNSname>"
+#    Type: String
+#    AllowedPattern: (?!-)[a-zA-Z0-9-.*]{1,63}(?<!-)
+    
+Resources:
+
+  NewVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "90.90.0.0/16"
+      EnableDnsHostnames: true
+      InstanceTenancy: "default"
+      Tags:
+        - Key: "Name"
+          Value: "aws_capstone-VPC"
+
+  Pub1A:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1a"
+      CidrBlock: "90.90.10.0/24"
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-public-subnet-1A"
+      VpcId: !Ref NewVPC # Required
+
+  Priv1A:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1a"
+      CidrBlock: "90.90.11.0/24"
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-private-subnet-1A"
+      VpcId: !Ref NewVPC # Required
+
+  Pub1B:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1b"
+      CidrBlock: "90.90.20.0/24"
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-public-subnet-1B"
+      VpcId: !Ref NewVPC # Required
+
+  Priv1B:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1b"
+      CidrBlock: "90.90.21.0/24"
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-private-subnet-1B"
+      VpcId: !Ref NewVPC # Required
+
+  NewIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-IGW"
+   
+  AttachIGW:
+     Type: AWS::EC2::VPCGatewayAttachment
+     Properties:
+       InternetGatewayId: !Ref NewIGW
+       VpcId: !Ref NewVPC
+
+  PubRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-public-RT"
+      VpcId: !Ref NewVPC # Required
+
+  PrivRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "aws_capstone-private-RT"
+      VpcId: !Ref NewVPC # Required
+
+  Priv1Aassoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivRT # Required
+      SubnetId: !Ref Priv1A # Required
+
+  Priv1Bassoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivRT # Required
+      SubnetId: !Ref Priv1B # Required
+
+  Pub1Aassoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRT # Required
+      SubnetId: !Ref Pub1A # Required
+
+  Pub1Bassoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRT # Required
+      SubnetId: !Ref Pub1B # Required
+
+  Route2IGW:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref NewIGW
+      RouteTableId: !Ref PubRT
+
+  S3GwEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      RouteTableIds: 
+        - !Ref PrivRT
+      ServiceName: "com.amazonaws.us-east-1.s3" # Required
+      VpcEndpointType: "Gateway"  #though it is so by default
+      VpcId: !Ref NewVPC # Required
+
+  ALBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group allows traffic HTTP and HTTPS ports from anywhere # Required
+      GroupName: "aws_capstone_ALB_Sec_Group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp	#required
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp	#required
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref NewVPC
+      Tags:
+        - Key: Name
+          Value: "AWS Capstone ALB SecGroup"
+
+  NATSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group allows traffic HTTP and HTTPS and SSH ports from anywhere # Required
+      GroupName: "aws_capstone_NAT_Sec_Group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp	#required
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp	#required
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp	#required
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0      
+      VpcId: !Ref NewVPC
+      Tags:
+        - Key: Name
+          Value: "AWS Capstone NAT SecGroup"
+
+  EC2SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Groups only allows traffic coming from aws_capstone_ALB_Sec_Group Security Groups for HTTP and HTTPS ports. In addition, ssh port is allowed from anywhere # Required
+      GroupName: "aws_capstone_EC2_Sec_Group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp	#required
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSG
+        - IpProtocol: tcp	#required
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref ALBSG
+        - IpProtocol: tcp	#required
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref NATSG
+      VpcId: !Ref NewVPC
+      Tags:
+        - Key: Name
+          Value: "AWS Capstone EC2 SecGroup"
+
+  RDSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Groups only allows traffic coming from aws_capstone_EC2_Sec_Group Security Groups for MYSQL/Aurora port # Required
+      GroupName: "aws_capstone_RDS_Sec_Group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp	#required
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref EC2SG
+      VpcId: !Ref NewVPC
+      Tags:
+        - Key: Name
+          Value: "AWS Capstone RDS SecGroup"
+
+  RDSSubnetGr:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "aws capstone RDS Subnet Group" # Required
+      DBSubnetGroupName: "aws_capstone_RDS_Subnet_Group"
+      SubnetIds: # Required
+        - !GetAtt Priv1A.SubnetId
+        - !GetAtt Priv1B.SubnetId
+      Tags:
+        - Key: Name
+          Value: "aws_capstone_RDS_Subnet_Group"
+
+  NewRDS:
+    Type: AWS::RDS::DBInstance
+    Properties: 
+      AllocatedStorage: "20"
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: 7
+      DBInstanceClass: db.t2.micro
+      DBInstanceIdentifier: aws-capstone-RDS
+      DBName: database1
+      DBSubnetGroupName: !Ref RDSSubnetGr
+      VPCSecurityGroups:
+        - !Ref RDSSG
+      EnableCloudwatchLogsExports:
+        - "audit"
+        - "error"
+      Engine: MySQL
+      EngineVersion: 8.0.20
+      MasterUsername: admin
+      # REMOVE THE PASSWORD AND THE FOLLOWING # TO GET THE PASSWORD FROM THE PARAMETER
+      MasterUserPassword: Clarusway1234 #!Ref RDSdbPWD
+      PreferredBackupWindow: 03:00-04:00
+      PreferredMaintenanceWindow: mon:05:00-mon:06:00      
+      Port: 3306
+      PubliclyAccessible: false
+      
+  BlogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: awscapstonerumeysasblog
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+
+  FailoverBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Join [ ".", [ !Ref SubDomainName, !Ref DomainName ]]  
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+      WebsiteConfiguration:
+        IndexDocument: index.html  
+
+  NATinstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-003acd4f8da7e06f9
+      InstanceType: t2.micro
+      KeyName: !Ref KeyPair
+      SecurityGroupIds:
+        - !Ref NATSG
+      SubnetId: !Ref Pub1A
+      SourceDestCheck: false
+      Tags:
+        - Key: Name
+          Value: AWS Capstone NAT Instance 
+
+  Route2NAT:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      InstanceId: !Ref NATinstance
+      RouteTableId: !Ref PrivRT
+
+  IAMroleS3full:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: # Required
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      Description: For EC2, S3 Full Access Role
+      RoleName: aws_capstone_EC2_S3_Full_Access
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  IAMinstProf:    #Required for LaunchTemplate in order to use IAM role
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: "AmazonS3full"
+      Roles: # Required
+        - !Ref IAMroleS3full
+
+  WebServerLT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: aws_capstone_launch_template
+      LaunchTemplateData:
+        ImageId: ami-0729e439b6769d6ab
+        InstanceType: t2.micro
+        DisableApiTermination: true
+        IamInstanceProfile:
+          Arn: !GetAtt IAMinstProf.Arn
+        KeyName: !Ref KeyPair
+        SecurityGroupIds:
+          - !GetAtt EC2SG.GroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags: 
+              - Key: Name
+                Value: aws_capstone_web_server
+        UserData: !Base64 |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install git -y
+          apt-get install python3 -y
+          cd /home/ubuntu/
+          TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXX"
+          git clone https://$TOKEN@github.com/<github_acount_name>/my-aws-capstone-project.git
+          cd /home/ubuntu/my-aws-capstone-project
+          apt install python3-pip -y
+          apt-get install python3.7-dev libmysqlclient-dev -y
+          pip3 install -r requirements.txt
+          cd /home/ubuntu/my-aws-capstone-project/src
+          python3 manage.py collectstatic --noinput
+          python3 manage.py makemigrations
+          python3 manage.py migrate
+          python3 manage.py runserver 0.0.0.0:80
+        
+  IAMrolesForLambda:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: # Required
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Description: This role give a permission to lambda to reach S3 and DynamoDB on custom VPC
+      RoleName: aws_capstone_lambda_Role
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess 
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess       
+        - arn:aws:iam::aws:policy/job-function/NetworkAdministrator
+
+# !!! UNCOMMENT THIS PART ONLY IF YOU HAVE NOT YET REQUESTED ANY CERTIFICATE !!!       
+#
+#  BlogCertificate:
+#    Type: AWS::CertificateManager::Certificate
+#    Properties:
+#      CertificateTransparencyLoggingPreference: ENABLED
+#      DomainName: !Ref BlogDomainName # Required
+#      DomainValidationOptions: 
+#      - DomainName: !Ref BlogDomainName
+#        HostedZoneId: !Ref DomainName
+#      ValidationMethod: DNS
+
+  WebServerTG:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: awscapstoneTargetGroup
+      Port: 80
+      Protocol: HTTP
+      ProtocolVersion: HTTP1
+      TargetType: instance				#alternative
+      HealthCheckIntervalSeconds: 20	#alternative
+      HealthCheckTimeoutSeconds: 5		#alternative
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 5
+      HealthCheckPort: traffic-port
+      VpcId: !Ref NewVPC
+      Tags:
+        - Key: Name
+          Value: awscapstoneTargetGroup
+          
+  NewALB:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    DependsOn:
+      - WebServerTG
+    Properties:
+      Name: awscapstoneALB
+      IpAddressType: ipv4		#alternative
+      Scheme: internet-facing	#alternative
+      SecurityGroups:
+        - !GetAtt ALBSG.GroupId
+      Subnets: 
+        - !Ref Pub1A
+        - !Ref Pub1B
+      Type: application	  
+
+  ALBListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref MyCertificateARN
+                        # !Ref BlogCertificate   #if requested via this stack
+      DefaultActions: #required
+        - Type: forward
+          TargetGroupArn: !Ref WebServerTG
+      LoadBalancerArn: !Ref NewALB #required
+      Port: 443 #required
+      Protocol: HTTPS #required
+      SslPolicy: ELBSecurityPolicy-2016-08
+
+  HTTPlistener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Protocol: "HTTPS"
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
+      LoadBalancerArn: !Ref NewALB
+      Port: 80
+      Protocol: "HTTP"
+  
+  NewASG:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      HealthCheckGracePeriod: 300
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebServerLT
+        Version: !GetAtt WebServerLT.LatestVersionNumber
+      MaxSize: 1 #required
+      MinSize: 1 #required
+      DesiredCapacity: 1
+      VPCZoneIdentifier:
+        - !Ref Priv1A
+        - !Ref Priv1B
+      TargetGroupARNs:
+        - !Ref WebServerTG
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: false
+          Value: aws_capstone_ASG
+
+  NewCPUPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref NewASG  # Required
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 70.0      
+
+  NewCloudFront:
+    Type: "AWS::CloudFront::Distribution" 
+    Properties:
+      DistributionConfig:
+        Aliases:
+        - !Ref FailoverBucket 
+        Comment: Cloudfront Distribution pointing to Failover S3 bucket
+        DefaultCacheBehavior:
+          AllowedMethods:  
+          - GET
+          - HEAD
+          - OPTIONS
+          - PUT
+          - PATCH
+          - POST
+          - DELETE
+          CachedMethods:
+            - HEAD
+            - GET
+            - OPTIONS
+          Compress: true
+          ForwardedValues: 
+            Headers:
+              - Accept
+              - Accept-Charset
+              - Accept-Datetime
+              - Accept-Encoding
+              - Accept-Language
+              - Authorization
+              - Cloudfront-Forwarded-Proto
+              - Host
+              - Origin
+              - Referrer
+            QueryString: true 
+            Cookies:
+              Forward: all 
+          TargetOriginId: CapstoneOrigin  
+          ViewerProtocolPolicy: redirect-to-https 
+        #DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: 'http2'
+        Origins: 
+        - DomainName: !GetAtt NewALB.DNSName
+          Id: CapstoneOrigin
+          CustomOriginConfig: 
+            OriginProtocolPolicy: match-viewer 
+            HTTPPort: 80
+            HTTPSPort: 443
+            OriginSSLProtocols: 
+              - TLSv1
+        PriceClass: PriceClass_All
+        ViewerCertificate:  
+          AcmCertificateArn: !Ref MyCertificateARN
+          SslSupportMethod: sni-only
+
+  NewHealthCheck: 
+    Type: 'AWS::Route53::HealthCheck'
+    Properties: 
+      HealthCheckConfig: 
+        Port: 80
+        Type: HTTP
+        FullyQualifiedDomainName: !GetAtt NewCloudFront.DomainName
+      HealthCheckTags: 
+        - 
+          Key: Name
+          Value: aws capstone health check
+
+  DNSfailoverPrimary:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub "${DomainName}."
+      RecordSets:
+        - Name: !Ref FailoverBucket
+          Failover: PRIMARY
+          HealthCheckId: !Ref NewHealthCheck
+          SetIdentifier: "Cloudfront as Primary Record"
+          Type: A
+          AliasTarget: 
+            DNSName: !GetAtt NewCloudFront.DomainName 
+            EvaluateTargetHealth: true
+            HostedZoneId: Z2FDTNDATAQYW2
+        - Name: !Ref FailoverBucket
+          Failover: SECONDARY
+          SetIdentifier: "S3 Bucket for Secondary record type"          
+          Type: A
+          AliasTarget: 
+            DNSName: s3-website-us-east-1.amazonaws.com
+            HostedZoneId: Z3AQBSTGFYJSTF
+
+  NewDynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema: # Required
+        - AttributeName: id
+          KeyType: HASH
+      TableName: awscapstoneDynamo
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
