@@ -49,6 +49,7 @@ same pod, each pod will get a unique name however they can share the same label 
 For pods, labels is a required field for other components like deployment configmap etc labels is optional but it is a good practice to set them now when we create pod replicas how does deployment know which parts actually belong to it or how does kubernetes know which pods belong to which deployments and that is defined using this part right here so selector match labels is in the specification of the deployment as you see and this defines that all the parts that match this label belong to this deployment so that's why we have match labels here so this selector will match the pods created with this configuration because they have label app engine x now are these labels given or can you select any key value pairs well these are totally up to you you can call it whatever you want you can call it my key my value it doesn't really matter however the standard and a common practice in kubernetes is to use app key in the labels when labeling your applications and the value will obviously be whatever application you have so let's actually change and set the values to instead of nginx because that's our application and of course we want to match label app and let's also change this one right here to deployment 
 
 *Step6*:
+
 ![](images/Step10.png)
 let's add a service configuration because every application needs a service in kubernetes and that's going to be a separate yaml unit or yaml section and we're going to separate it using three dashes which is basic yaml syntax nothing specific to kubernetes and again let's grab a service example and adjust it as we need now service configuration is much easier than the deployment as you see first let's change
 the name let's call it service and remember this is the end point
@@ -58,6 +59,7 @@ application in the pod is accessible that's where the service should forward the
 ![](images/Step11.png)
 
 *Step7:*
+
 ![](images/Step12.png)
 We will copy this whole thing and create a deployment in service for web
 application for our kubernetes demo application and let's call this webapp.yaml paste everything in and we can just adjust all these
@@ -103,7 +105,9 @@ see deployment and service were created and finally let's deploy our web applica
 *Step12:*
 Final step we want to validate that our application is also accessible from the browser. Since we run minikube with `--driver docker` option, we need to get the service url with below command:
 ![](images/getting-appurl-for-minikube-running-on-docker.png)
+
 This is our application running!! 
+
 ![](images/app-running-on-nodeport.png)
 
 
