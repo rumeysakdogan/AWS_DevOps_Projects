@@ -126,7 +126,7 @@ thousand                         Warning -> 'Invalid input: Phone number should 
 
 ## Expected Outcome
 
-![Phonebook App Search Page](./search-snapshot.png)
+![](phonebook-app-search.png)
 
 ### At the end of the project, following topics are to be covered;
 
