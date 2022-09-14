@@ -1,4 +1,4 @@
-# Project-101 : Backup, User and Group Management, String Manipulation with Linux Commands and Bash Scripting
+# Project-102: Backup, User and Group Management, String Manipulation with Linux Commands and Bash Scripting
 
 ## Description
 
