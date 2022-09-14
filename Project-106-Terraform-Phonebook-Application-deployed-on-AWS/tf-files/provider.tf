@@ -18,5 +18,5 @@ provider "aws" {
 
 provider "github" {
   # Configuration options
-  token = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  token = "XXXXXXXXXXXXXXXXXXXXX"
 }
