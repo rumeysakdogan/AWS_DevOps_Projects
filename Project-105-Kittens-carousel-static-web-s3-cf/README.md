@@ -1,4 +1,4 @@
-# Project-105 : Kittens Carousel Static Website deployed on AWS Cloudfront, S3 and Route 53 using Cloudformation
+# Project-105: Kittens Carousel Static Website deployed on AWS Cloudfront, S3 and Route 53 using Cloudformation
 
 ## Description
 
