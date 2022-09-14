@@ -1,0 +1,13 @@
+plugin: aws_ec2
+regions:
+  - "us-east-1"
+filters:
+  tag:stack: ansible_project
+  # tag:env: oliver
+  # instance-state-name: running
+keyed_groups:
+  - key: tags.Name
+    # prefix: tag
+  - key: tags.environment
+compose:
+  ansible_host: public_ip_address

@@ -1,0 +1,65 @@
+- name: install docker
+  hosts: tag_oliver_galaxy
+  become: true
+  tasks:
+    - name: Include the example role
+      include_role:
+        name: geerlingguy.docker
+
+    - name: Install pip
+      package: 
+        name: python3-pip
+        state: present
+        update_cache: true
+        
+    - name: Install docker sdk
+      pip:
+        name: docker
+
+    - name: create build directory
+      file:
+        path: /home/ec2-user/postgresql
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: copy the sql script
+      copy: 
+        src: /home/ec2-user/ansible-project/postgres/init.sql
+        dest: /home/ec2-user/postgresql
+
+    - name: copy the dockerfile
+      copy: 
+        src: /home/ec2-user/ansible-project/postgres/Dockerfile
+        dest: /home/ec2-user/postgresql 
+
+    - name: remove container and image if exist
+      shell: "docker ps -q --filter 'name=oliver_postgre' && docker stop oliver_postgre && docker rm -fv oliver_postgre && docker image rm -f olivercw/postgre || echo 'Not Found'"
+
+    - name: build container image
+      docker_image:
+        name: olivercw/postgre
+        build:
+          path: /home/ec2-user/postgresql
+        source: build
+        state: present
+
+    - name: create postgresql docker container
+      docker_container:
+        name: oliver_postgre
+        image: olivercw/postgre
+        state: started
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_PASSWORD: "Pp123456789"
+        volumes:
+          - /db-data:/var/lib/postgresql/data
+      register: container_info
+
+    - name: print the container info
+      debug:
+        var: container_info
+
+

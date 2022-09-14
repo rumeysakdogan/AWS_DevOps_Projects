@@ -1,0 +1,99 @@
+- name: configure nodejs instance
+  hosts: _ansible_nodejs
+  become: true
+  tasks: 
+    - name: update packages
+      yum: 
+        name: "*"
+        state: latest
+    - name: Uninstall old versions
+      yum:
+        name: "{{ item }}"
+        state: removed
+      loop:
+        - docker
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+
+    - name: install yum-utils
+      yum:
+        name: yum-utils
+        state: latest
+      
+    - name: Add Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install Docker
+      package:
+        name: docker-ce
+        state: latest
+
+    - name: Install pip
+      package: 
+        name: python3-pip
+        state: present
+        
+    - name: Install docker sdk
+      pip:
+        name: docker
+
+    - name: add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: start docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: create build directory
+      file:
+        path: /home/ec2-user/nodejs
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: copy files to nodejs node
+      copy: 
+        src: /home/ec2-user/ansible/ansible-Project/nodejs/server/
+        dest: /home/ec2-user/nodejs
+
+    - name: copy the dockerfile
+      copy: 
+        src: /home/ec2-user/ansible/ansible-Project/nodejs/Dockerfile
+        dest: /home/ec2-user/nodejs
+
+    - name: remove container and image if exist
+      shell: "docker ps -q --filter 'name=oliver_nodejs' && docker stop oliver_nodejs && docker rm -fv oliver_nodejs && docker image rm -f olivercw/nodejs || echo 'Not Found'"
+
+    - name: build container image
+      docker_image:
+        name: olivercw/nodejs
+        build:
+          path: /home/ec2-user/nodejs
+        source: build
+        state: present
+
+    - name: create postgresql docker container
+      docker_container:
+        name: oliver_nodejs
+        image: olivercw/nodejs
+        state: started
+        ports:
+          - "5000:5000"
+      register: container_info
+
+    - name: print the container info
+      debug:
+        var: container_info
