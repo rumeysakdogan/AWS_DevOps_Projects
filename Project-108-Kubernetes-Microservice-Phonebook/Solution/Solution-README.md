@@ -61,7 +61,7 @@ kubectl apply -f path/<directory_of_resultserver_yamls>
   * Resultserver is running on NodePort: 30002
   * Webserver is running on NodePort: 30001
 
-## Step 9: Check your apllication is up and running
+## Step 9: Check your application is up and running
   * Check your app in below urls:
     * Resultserver: <worker_node_public_ip>:30002
 ![](resultserver-via-Nodeport30002.png)  
