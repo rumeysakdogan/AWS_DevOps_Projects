@@ -1,0 +1,425 @@
+MSP-1:
+------
+* sudo usermod -a -G <group-name> <user-name>
+    |--> -a : append
+    |--> -G : Group
+    |--> use ```$ newgrp docker``` to activate the usermod command...
+    |--> don't forget to put the <group-name>. Because you can delete the user from the groups. 
+
+* sudo curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    |--> -L,--location : if there is redirection on the address, this option will let curl to make the request again.
+    |--> -o, --output <file-name> : this option writes the downloaded file onto the file we gave  
+
+
+MSP-2:
+------
+* git push --set-upstream origin dev == git push -u origin dev
+
+* git remote -v 
+    |--> gives the remote origin address
+
+* git remote rm origin 
+    |--> removes the origin address from local repository. 
+
+* git remote add origin <http-url-address-of-the-repo>
+    |--> adds origin address. If you have used ```$ git clone <http-url-address-of-the-repo>, 
+         you dont need it. But if you have started with ```$ git init``` or if you have removed your origin, you should use it. 
+
+* git checkout -b <branch-name>
+    |--> creates a new branch and then switches to that branch
+
+    
+MSP-3:
+------
+* ./mvnw clean test 
+    |--> cleans the target folders under every module, compiles and then runs the unit tests.
+
+* order of maven default lifecyle phases
+    |--> validate, compile, test, package, integration-test, verify, install, deploy
+
+* ./mvnw clean ---> deletes the target folder
+
+
+MSP-6:
+------
+* -Djava.security.egd=file:/dev/./urandom
+    |--> egd = entropy gathering deamon
+    |--> system property used for not blocking JVM's running...
+
+* Random and Urandom are both devices in /dev in Linux to generate random data, but have a few differences . 
+These devices are like special files that use some source of entropy to generate random data. 
+A kernel gathers information from external sources (i.e. some unpredictable sources like interrupts , keyboard events , mouse movements) to generate input to the entropy pool. 
+This input is nothing but some bits with extremely strong random properties. 
+The entropy pool acts as source of input for randomness for both the devices mentioned above.
+Read from /dev/random device is blocked if the entropy pool runs low on the bits until there is sufficient entropy gathered. 
+While it’s not the same case with dev/urandom device. urandom reads from the entropy pool till sufficient entropy is available. 
+Once the entropy pool is exhausted ,it uses SHA cryptographic hash algorithm to generate strong random numbers.
+If we want more random numbers to be generated in short span of time, /dev/urandom is always a better option. 
+Since /dev/random gets blocked and affects the performance of the application due to low entropy, it should be used only when it is strongly needed i.e. in cases of long-lived GPG/SSL/SSH keys.
+
+MSP-7:
+------
+* docker build --force-rm -t <image-name:tag> <directory-having-Dockerfile>
+    |--> --force-rm deletes all intermediate containers if a failure occurs during the build
+    |--> --rm is default option used when building and it doesn't delete intermediate containers
+    |--> --rm is used for inspecting the faulty container
+    |--> if there is no fail, all intermediate containers are deleted
+    |--> for inspecting a failed container, you can use "docker inspect <container-name/id>" 
+    or "docker history <container-name/id>" commands
+
+
+MSP-8:
+------
+* docker-compose-local.yml
+    |--> mem_limit is for limiting the container's memory useage
+    |--> depends_on property helps to define a launching order but doesnt gaurantee 
+    the same order when it comes to the container's being fully operational 
+    |--> to be successful on that we use "dockerize (/jwilder/dockerize) binary
+    |--> (tracing-server) environment: --> "JAVA_OPTS=-XX:+UnlockExperimentalVMOptions" is functional if Java8 or Java9
+    is used in the container. It allows mem_limit to take effect on JVM. For Java10 and later, it's not necessary 
+
+* docker container prune
+    |--> removes stopped containers
+
+* docker image prune -a
+    |--> removes all images
+
+
+MSP-11:
+------
+* GPG stands for GNU Privacy Gaurd
+
+* wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+    |--> -O : outputs to the configuration file into yum repo.
+    |--> in this configuration file there is a url. this url is used during gpg (gnu privacy gaurd) checking
+
+* rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key 
+    |--> this command imports the gpg key for jenkins. Then it's checked using the url coming 
+         from the configuration file
+
+* sed -i 's/^ExecStart=.*/ExecStart=\/usr\/bin\/dockerd -H tcp:\/\/127.0.0.1:2375 -H unix:\/\/\/var\/run\/docker.sock/g' /lib/systemd/system/docker.service
+    |--> this line causes the docker service to set the first command to be accomplished while starting up
+    |--> (-H or --host list) means "Daemon socket(s) to connect to"
+
+
+MSP-13:
+-------
+* to be able to use jacoco plugin of jenkins efficiently
+    |--> set the health reporting values
+    |--> above sunny -> green, below sunny and above stormy -> unstable, below stormy -> failure
+    |--> above delta -> failure
+    |--> The smallest unit JaCoCo counts are single Java byte code "instructions"
+
+* Jacoco code coverage report configuration.
+    |--> path to excute files: It is defined where the *.exec files are. In our example, there is just jacoco.exec, so only jacoco.exec will be executed.
+    |-->inclusions: It is defined included binary files.
+    |-->exclusions: It is defined excluded binary files.
+    |-->path to class directories: It is defined where compiled code can be found.
+    |-->path to source dirs: It is defined where the corresponding source code is.
+    |-->inclusions: It is defined included souce code files. 
+    |-->exclusion: It is defined excluded souce code files
+
+resource: https://plugins.jenkins.io/jacoco/
+
+
+MSP-16:
+-------
+
+* ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${WORKSPACE}/${CFN_KEYPAIR} ec2-user@172.31.57.241 hostname
+    |--> o : option
+    |--> StrictHostKeyChecking no : host will be not be checked if it exists in the known_hosts file 
+         but you might be warned about whether you want to save the host ip into known_hosts file
+    |--> UserKnownHostsFile /dev/null : doesn't try to enter any value to the known_hosts file
+    |--> hostname : gives the hostname of the remote machine and then exits the terminal
+
+* To become the jenkins user
+    |--> 1st run the command : "sudo usermod -s /bin/bash jenkins"
+    |--> 2nd run the command : "sudo su - jenkins"
+        |--> su : switch user command
+        |--> "-" means that you want to change directory to the home folder of jenkins user
+    |--> check if you are succesful with "whoami" command
+
+* ansible aws_ec2 plugin
+    |--> this plugin gives us an inventory
+    |--> minimal requirement is the "plugin" property of a yaml/yml file 
+    |--> also the name of the yaml file should end with "aws_ec2" --> Ex: my_hosts_aws_ec2.yml
+    |--> boto_profile/aws_profile : this property is the profile used in the credentials file
+    |--> filters property filters the instances according to some specific feature or a tag
+    |--> keyed_groups : it groups your instances according to the "key"
+    |--> hostname : it gives us the "ansible_host" variable
+    |--> compose : it gives an extra variable about the hosts in the inventory
+        |--> Ex: "ansible_user"
+        |--> if "ansible_host" is used it overrides the "hostname" property 
+
+* ansible-inventory -v -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml --graph
+    |--> checks the inventory and outputs the results about the instances
+    |--> --graph : gives the output in a more readable way
+    |--> -v : verbosity level for the logs
+
+* "get_url" ansible module
+    |--> downloads a remote source
+    |--> dest : destination for the download
+    |--> mode : file permission mode
+
+* "unarchive" ansible module
+    |--> unarchives a source
+    |--> creates : unarchiving should create a folder for the results
+
+* "add_host" ansible module
+    |--> adds a new host with the specified name
+    |--> we give a variable to that host for using the value in another play
+
+* "hostvars['grand_master']['manager_join']
+    |--> hostvars special variable has this newly created host as an object. we can reach the variable
+         generated in another play using hostvars.
+    |--> hostvars is a global variable. you can also reach a variable defined in your inventory.
+
+* ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml -b ./ansible/playbooks/pb_setup_for_all_docker_swarm_instances.yaml
+    |--> runs playbooks
+    |--> -i : inventory
+    |--> -b : become root to run the playbook
+
+Resources:
+----------
+* ssh command options
+    |--> https://linuxcommand.org/lc3_man_pages/ssh1.html
+    |--> https://linux.die.net/man/5/ssh_config
+
+* ansible aws_ec2 plugin
+    |--> https://docs.ansible.com/ansible/latest/collections/amazon/aws/aws_ec2_inventory.html
+    |--> available filters : https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-instances.html#options
+
+* Ansible shell module
+    |--> https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html
+
+
+MSP-17:
+-------
+* MVN_VERSION=$(. ${WORKSPACE}/spring-petclinic-admin-server/target/maven-archiver/pom.properties && echo $version)
+  |--> source and . (a period) are the same command. 
+  |--> The dot command (.) is a command used to evaluate commands in the current execution context.
+  |--> When you run an executable script as ./my-script.sh, the commands are run in a new subshell, 
+  while when run as . my-script.sh the current shell context will be used. 
+  Generally, your current context is your terminal window. This mean that the dot command will apply changes to your current shell.
+  |--> With the dot (.) command, we can also read variables from a file. 
+       The variables must be set using the Bash syntax, VARIABLE=VALUE.
+
+* customers-service:
+    image: "${IMAGE_TAG_CUSTOMERS_SERVICE}"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+      replicas: 3
+      update_config:
+          parallelism: 2
+          delay: 5s
+          order: start-first
+
+    |--> deploy : configuration related to the deployment and running of services
+        |--> resources : Configures resource constraints
+            |--> limits : limiting resources
+                |--> memory : memory allocated for the service
+        |--> replicas : number of containers to be run
+        |--> update_config : used during rolling updates
+            |--> parallelism : number of containers to update at a time
+            |--> delay : time to wait between updating a group of containers
+            |--> order : Order of operations during updates. 
+                |--> stop-first : old task is stopped before starting new one (default)
+                |--> start-first : new task is started first, and the running tasks briefly overlap 
+
+* docker stack deploy --with-registry-auth -c /home/ec2-user/docker-compose-swarm-dev-tagged.yml {{ app_name }}
+    |--> --with-registry-auth : Send registry authentication details to Swarm agents
+
+* envsubst < docker-compose-swarm-dev.yml > docker-compose-swarm-dev-tagged.yml
+    |--> replaces the environment variables in the docker-compose-swarm-dev.yml file with their values.
+         then creates a new file with the changed file
+
+Resources:
+----------
+* How And When To Use The Dot Command In Bash?
+    |--> https://www.shell-tips.com/bash/source-dot-command/
+
+* docker hub address of callahanclarus/selenium-py-chrome/dockerfile
+    |--> https://hub.docker.com/r/callahanclarus/selenium-py-chrome/dockerfile
+
+* with_fileglob
+    |--> https://docs.ansible.com/ansible/latest/collections/ansible/builtin/fileglob_lookup.html
+
+* aws ec2 describe-instance --filter
+    |--> https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Filtering.html
+    |--> https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/describe-instances.html#options
+
+
+
+MSP-22:
+------
+* kompose tool :
+    |--> used for generating k8s definition files
+    |--> consumes a simplified and modified docker-compose file to generate k8s definition files
+    |--> use 1, 2 or 3 as the version of docker-compose file
+    |--> kompose convert -f docker-compose.yml -o k8s/base
+        |--> -f : file, -o : output
+        |--> converting command
+* initContainer :
+    |--> used before launching the containers in a pod
+    |--> command: ['sh', '-c', 'until nc -z discovery-server:8761; do echo waiting for discovery-server; sleep 2; done;']
+        |--> command for busybox. waits until the port of a service is reachable
+
+* kustomize tool : 
+    |--> it s used for customizing the definition files. You can add a field or change a field on the k8s definition files 
+    |--> Patches is a feature of kustomization :
+        |--> Patches feature is used for adding or replacing some fields on the related resource
+        |--> you can use seperate files or inline fields to patch on the definition files
+
+* kubectl kustomize k8s/prod/
+    |--> shows the output of kustomization
+
+Resources:
+----------
+* kompose :
+    |--> https://kompose.io/user-guide/#user-guide
+
+* https://nip.io/
+
+* Resource for Regular Expressions :
+    |--> https://regexr.com/
+
+* Kustomize :
+    |--> https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
+    |--> feature list :
+        |--> https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#kustomize-feature-list
+    |--> patches feature :
+        |--> https://kubectl.docs.kubernetes.io/references/kustomize/patches/
+
+
+MSP-23:
+-------
+* tagging resources in the cluster
+    |--> kubernetes uses tags to discover the resources
+    |--> when you are using "eksctl" or "aws eks" commands taggins are done automatically
+    |--> "kubernetes.io/cluster/<CLUSTERID> = owned" 
+        |--> CLUSTERID can be any string. just stick to that string
+
+* rancher-cluster.yml file
+    |--> internal_address : private ip address, used for internal cluster traffic
+    |--> role : multiple nodes can have multiple roles, single node can have multiple roles
+    |--> address, user and role properties are required
+    |--> services : components of kubernetes
+    |--> ingress :
+        |--> use-forwarded-headers :
+            |--> If true, NGINX passes the incoming headers info to nginx controller 
+                 Use this option when NGINX is behind another L7 proxy / load balancer (Since we're using 
+                 an application loadbalancer, we are behind L7 proxy) that is setting these headers.
+
+Resources:
+----------
+* tagging resources in the cluster
+    |--> https://rancher.com/docs/rke/latest/en/config-options/cloud-providers/aws/
+    |--> https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html#subnet-tagging-for-load-balancers
+
+* rancher-cluster.yml file :
+    |--> https://rancher.com/docs/rancher/v2.x/en/installation/resources/k8s-tutorials/ha-rke/
+    |--> https://rancher.com/docs/rke/latest/en/example-yamls/
+    |--> etcd service options :
+        |--> https://rancher.com/docs/rke/latest/en/etcd-snapshots/recurring-snapshots/
+
+
+MSP-24:
+-------
+* HELM 
+    |--> kind of kubernetes package manager
+    |--> you can install a small service for your application as well as a gigantic application with all of its services
+    |--> Three Big Concepts 
+        |--> Chart
+            |--> a chart is a package like a yum package 
+        |--> Repository
+            |--> the place where charts are collected and can be shared
+        |--> Release
+            |--> output of the command "helm install ..."
+            |--> release is an instance of a chart
+                |--> one chart can produce multiple releases
+    |--> Helm binary installs charts into k8s
+    |--> "helm search hub" : searches artifact hub
+    |--> "helm search repo" : searches local repos
+    |--> "helm install <release-name-you-gave> <chart-name>" : installs a package to your cluster
+    |--> customizable parts of a chart are in the "values.yml" file
+
+* helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+    |--> helm repo add : adds a repo to local
+    |--> rancher-latest : repo name
+
+* helm install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.clarusway.us \
+  --set tls=external --set replicas=1
+    |--> installs rancher from the rancher-latest repo into cattle-system namespace by setting hostname=...., tls=..., replica=... 
+
+* Rancher 
+    |--> Important Config Files :
+        |--> rancher-cluster.yml : The RKE cluster configuration file.
+             kube_config_rancher-cluster.yml : The Kubeconfig file for the cluster, this file contains credentials 
+             for full access to the cluster.
+             rancher-cluster.rkestate : The Kubernetes cluster state file. This file contains credentials 
+             for full access to the cluster.
+
+Resources:
+----------
+* Basics of Helm
+    |--> https://helm.sh/docs/intro/using_helm/ 
+    |--> https://artifacthub.io/   
+        
+* Architecture of Rancher
+    |--> https://rancher.com/docs/rancher/v2.x/en/overview/architecture/
+
+
+MSP-25:
+-------
+* If you are having repeated errors complaing about the etcd with the following message (Cluster must have at least 
+  one etcd plane host: failed to connect to the following etcd host(s)...), most probably the issue is related to
+  certification. Rancher needs a TLS Certification to create functioning Kubernetes Clusters. You should issue your
+  AWS Certification while creating the Application Loadbalancer for the rancher cluster. (domain name in the 
+  certification should be issued to a general subdomain name like "*.clarusway.us")
+
+
+MSP-28:
+-------
+* Custom Resources 
+    |--> extension to k8s api. custom resource gives a new endpoint which lets us communicate to new objects
+
+* Custom Resource Definition 
+    |--> it allows you to define custom resources. Defining a CRD object creates a new custom resource with a 
+         name and a schema. The name of a CRD object must be a valid DNS subdomain name. This frees you from 
+         writing your own API server to handle the custom resource.
+
+* CRDs before HELM
+    |--> Before installing the chart, you must first install the cert-manager CustomResourceDefinition resources.
+         This is performed in a separate step to allow you to easily uninstall and reinstall cert-manager without
+         deleting your installed custom resources.
+
+* Warning
+    |--> You should not install multiple instances of cert-manager on a single cluster. 
+         This will lead to undefined behavior and you may be banned from providers such as Let’s Encrypt.
+
+* What is ACME?
+    |--> The ACME Issuer type represents a single account registered with the Automated Certificate 
+         Management Environment (ACME) Certificate Authority server. When you create a new ACME Issuer, 
+         cert-manager will generate a private key which is used to identify you with the ACME server.
+
+* preferredChain ---> Certificate chain (or Chain of Trust) is made up of a list of certificates that 
+  start from a server’s certificate and terminate with the root certificate. If your server’s certificate 
+  is to be trusted, its signature has to be traceable back to its root CA. So basiccally certificate chain type 
+  is the type of key management for these chain of keys. Note that this is a Preferred option, 
+  if none is found matching the request it will give you the default certificate as before
+
+* http01 ---> challange type for the new domain. Basicly your domain should publish a specific url with a requested
+  content in it.
+
+Resources:
+----------
+* Let's Encrypt
+    |--> https://letsencrypt.org/how-it-works/
+
+* ACME
+    |--> https://cert-manager.io/docs/configuration/acme/
+
+* HELM Repo of Jetstack cert-manager 
+    |--> https://artifacthub.io/packages/helm/jetstack/cert-manager
