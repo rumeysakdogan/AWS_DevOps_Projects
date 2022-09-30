@@ -1,6 +1,9 @@
-- The project 505's resources are below:
+- The project 504's resources are below:
 
 ```yml
+Gitflow: https://www.youtube.com/watch?v=1SXpE08hvGs
+Gitflow: https://nvie.com/posts/a-successful-git-branching-model/
+JaCoCo Sample Report: https://www.jacoco.org/jacoco/trunk/coverage/
 kompose installation: https://kompose.io/installation
 Kompose/User Guide: https://kompose.io/user-guide/#user-guide
 Helm/Introduction: https://helm.sh/docs/intro/
