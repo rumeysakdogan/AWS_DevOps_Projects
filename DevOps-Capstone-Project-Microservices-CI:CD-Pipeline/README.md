@@ -61,7 +61,7 @@ This project aims to create full CI/CD Pipeline for microservice based applicati
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## MSP 1 - Prepare Development Server Manually on EC2 Instance
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 * Prepare development server manually on Amazon Linux 2 (t3a.medium) for developers, enabled with `Docker`,  `Docker-Compose`,  `Java 11`,  `Git`.
 
@@ -133,7 +133,6 @@ git push origin main
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## MSP 3 - Check the Maven Build Setup on Dev Branch
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 * Switch to `dev` branch.
 
 ``` bash
@@ -599,3 +598,450 @@ git merge feature/msp-8
 git push origin dev
 ```
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## MSP 9 - Setup Unit Tests and Configure Code Coverage Report
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+* Create `feature/msp-9` branch from `dev`.
+
+``` bash
+git checkout dev
+git branch feature/msp-9
+git checkout feature/msp-9
+```
+
+* Create following unit tests for `Pet.java` under `customer-service` microservice using the following `PetTest` class and save it as `PetTest.java` under `./spring-petclinic-customers-service/src/test/java/org/springframework/samples/petclinic/customers/model/` folder.
+
+``` java
+package org.springframework.samples.petclinic.customers.model;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Date;
+
+import org.junit.jupiter.api.Test;
+public class PetTest {
+    @Test
+    public void testGetName(){
+        //Arrange
+        Pet pet = new Pet();
+        //Act
+        pet.setName("Fluffy");
+        //Assert
+        assertEquals("Fluffy", pet.getName());
+    }
+    @Test
+    public void testGetOwner(){
+        //Arrange
+        Pet pet = new Pet();
+        Owner owner = new Owner();
+        owner.setFirstName("Call");
+        //Act
+        pet.setOwner(owner);
+        //Assert
+        assertEquals("Call", pet.getOwner().getFirstName());
+    }
+    @Test
+    public void testBirthDate(){
+        //Arrange
+        Pet pet = new Pet();
+        Date bd = new Date();
+        //Act
+        pet.setBirthDate(bd);
+        //Assert
+        assertEquals(bd,pet.getBirthDate());
+    }
+}
+```
+
+* Implement unit tests with maven wrapper for only `customer-service` microservice locally on `Dev Server`. Execute the following command under the `spring-petclinic-customers-service folder`.
+
+``` bash
+../mvnw clean test
+```
+
+* Commit the change, then push the changes to the remote repo.
+
+``` bash
+git add .
+git commit -m 'added 3 UTs for customer-service'
+git push --set-upstream origin feature/msp-9
+```
+
+* Update POM file at root folder for Code Coverage Report using `Jacoco` tool plugin.
+
+``` xml
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.2</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+        </execution>
+        <!-- attached to Maven test phase -->
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+* Create code coverage report for only `customer-service` microservice locally on `Dev Server`. Execute the following command under the `spring-petclinic-customers-service folder`.
+
+``` bash
+../mvnw test
+```
+
+* Commit the change, then push the changes to the remote repo.
+
+``` bash
+git add .
+git commit -m 'updated POM with Jacoco plugin'
+git push
+git checkout dev
+git merge feature/msp-9
+git push origin dev
+```
+
+* Deploy code coverage report (located under relative path `target/site/jacoco` of the microservice) on Simple HTTP Server for only `customer-service` microservice on `Dev Server`.
+
+``` bash
+python -m SimpleHTTPServer # for python 2.7
+python3 -m http.server # for python 3+
+```
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## MSP 10 - Prepare and Implement Selenium Tests
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+* Create `feature/msp-10` branch from `dev`.
+
+``` bash
+git checkout dev
+git branch feature/msp-10
+git checkout feature/msp-10
+```
+
+* Create a folder for Selenium jobs with the name of `selenium-jobs` under under `petclinic-microservices-with-db` folder.
+
+``` bash
+mkdir selenium-jobs
+```
+
+* Create Selenium job (`QA Automation` test) for testing `Owners >> All` page and save it as `test_owners_all_headless.py` under `selenium-jobs` folder.
+
+``` python
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from time import sleep
+import os
+
+# Set chrome options for working with headless mode (no screen)
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("headless")
+chrome_options.add_argument("no-sandbox")
+chrome_options.add_argument("disable-dev-shm-usage")
+
+# Update webdriver instance of chrome-driver with adding chrome options
+driver = webdriver.Chrome(options=chrome_options)
+# driver = webdriver.Chrome("/Users/home/Desktop/chromedriver")
+# Connect to the application
+APP_IP = os.environ['MASTER_PUBLIC_IP']
+url = "http://"+APP_IP.strip()+":8080/"
+# url = "http://localhost:8080"
+print(url)
+driver.get(url)
+sleep(3)
+owners_link = driver.find_element_by_link_text("OWNERS")
+owners_link.click()
+sleep(2)
+all_link = driver.find_element_by_link_text("ALL")
+all_link.click()
+sleep(2)
+
+# Verify that table loaded
+sleep(1)
+verify_table = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+
+print("Table loaded")
+
+driver.quit()
+```
+
+* Create Selenium job (`QA Automation` test) for testing `Owners >> Register` page and save it as `test_owners_register_headless.py` under `selenium-jobs` folder.
+
+``` python
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from time import sleep
+import random
+import os
+# Set chrome options for working with headless mode (no screen)
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("headless")
+chrome_options.add_argument("no-sandbox")
+chrome_options.add_argument("disable-dev-shm-usage")
+
+# Update webdriver instance of chrome-driver with adding chrome options
+driver = webdriver.Chrome(options=chrome_options)
+
+# Connect to the application
+APP_IP = os.environ['MASTER_PUBLIC_IP']
+url = "http://"+APP_IP.strip()+":8080/"
+print(url)
+driver.get(url)
+owners_link = driver.find_element_by_link_text("OWNERS")
+owners_link.click()
+sleep(2)
+all_link = driver.find_element_by_link_text("REGISTER")
+all_link.click()
+sleep(2)
+# Register new Owner to Petclinic App
+fn_field = driver.find_element_by_name('firstName')
+fn = 'Callahan' + str(random.randint(0, 100))
+fn_field.send_keys(fn)
+sleep(1)
+fn_field = driver.find_element_by_name('lastName')
+fn_field.send_keys('Clarusway')
+sleep(1)
+fn_field = driver.find_element_by_name('address')
+fn_field.send_keys('Ridge Corp. Street')
+sleep(1)
+fn_field = driver.find_element_by_name('city')
+fn_field.send_keys('McLean')
+sleep(1)
+fn_field = driver.find_element_by_name('telephone')
+fn_field.send_keys('+1230576803')
+sleep(1)
+fn_field.send_keys(Keys.ENTER)
+
+# Wait 10 seconds to get updated Owner List
+sleep(10)
+# Verify that new user is added to Owner List
+if fn in driver.page_source:
+    print(fn, 'is added and found in the Owners Table')
+    print("Test Passed")
+else:
+    print(fn, 'is not found in the Owners Table')
+    print("Test Failed")
+driver.quit()
+```
+
+* Create Selenium job (`QA Automation` test) for testing `Veterinarians` page and save it as `test_veterinarians_headless.py` under `selenium-jobs` folder.
+
+``` python
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from time import sleep
+import os
+
+# Set chrome options for working with headless mode (no screen)
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("headless")
+chrome_options.add_argument("no-sandbox")
+chrome_options.add_argument("disable-dev-shm-usage")
+
+# Update webdriver instance of chrome-driver with adding chrome options
+driver = webdriver.Chrome(options=chrome_options)
+
+# Connect to the application
+APP_IP = os.environ['MASTER_PUBLIC_IP']
+url = "http://"+APP_IP.strip()+":8080/"
+print(url)
+driver.get(url)
+sleep(3)
+vet_link = driver.find_element_by_link_text("VETERINARIANS")
+vet_link.click()
+
+# Verify that table loaded
+sleep(5)
+verify_table = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+
+print("Table loaded")
+
+driver.quit()
+```
+
+* Commit the change, then push the selenium jobs to the remote repo.
+
+``` bash
+git add .
+git commit -m 'added selenium jobs written in python'
+git push --set-upstream origin feature/msp-10
+git checkout dev
+git merge feature/msp-10
+git push origin dev
+```
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## MSP 11 - Prepare Jenkins Server for CI/CD Pipeline
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+* Create `feature/msp-11` branch from `dev`.
+
+``` bash
+git checkout dev
+git branch feature/msp-11
+git checkout feature/msp-11
+```
+
+* Set up a Jenkins Server and enable it with `Git`,  `Docker`,  `Docker Compose`,  `AWS CLI v2`, `Python`,  `Ansible` and `Boto3`.  To do so, prepare a [Terraform file for Jenkins Server](./msp-11-jenkins-server-tf-template) with following scripts (jenkins_variables.tf, jenkins-server.tf, jenkins.auto.tf.vars, jenkinsdata.sh) and save them under `infrastructure` folder.
+
+``` bash
+#! /bin/bash
+# update os
+yum update -y
+# set server hostname as jenkins-server
+hostnamectl set-hostname jenkins-server
+# install git
+yum install git -y
+# install java 11
+yum install java-11-amazon-corretto -y
+# install jenkins
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+yum install jenkins -y
+systemctl start jenkins
+systemctl enable jenkins
+# install docker
+amazon-linux-extras install docker -y
+systemctl start docker
+systemctl enable docker
+usermod -a -G docker ec2-user
+usermod -a -G docker jenkins
+# configure docker as cloud agent for jenkins
+cp /lib/systemd/system/docker.service /lib/systemd/system/docker.service.bak
+sed -i 's/^ExecStart=.*/ExecStart=\/usr\/bin\/dockerd -H tcp:\/\/127.0.0.1:2375 -H unix:\/\/\/var\/run\/docker.sock/g' /lib/systemd/system/docker.service
+systemctl daemon-reload
+systemctl restart docker
+systemctl restart jenkins
+# install docker compose
+curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" \
+-o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+# uninstall aws cli version 1
+rm -rf /bin/aws
+# install aws cli version 2
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
+# install python 3
+yum install python3 -y
+# install ansible
+pip3 install ansible
+# install boto3
+pip3 install boto3
+# install terraform
+yum install -y yum-utils
+yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+yum -y install terraform
+```
+
+* Grant permissions to Jenkins Server within Terraform template to create Terraform template and create ECR Registry, push or pull Docker images to ECR Repo.
+
+* Commit the change, then push the terraform files file to the remote repo.
+
+``` bash
+git add .
+git commit -m 'added jenkins server terraform files'
+git push --set-upstream origin feature/msp-11
+git checkout dev
+git merge feature/msp-11
+git push origin dev
+```
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## MSP 12 - Configure Jenkins Server for Project
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+* Get the initial administrative password.
+
+``` bash
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+```
+
+* Enter the temporary password to unlock the Jenkins.
+
+* Install suggested plugins.
+
+* Create first admin user.
+
+* Open your Jenkins dashboard and navigate to `Manage Jenkins` >> `Manage Plugins` >> `Available` tab
+
+* Search and select `GitHub Integration`,  `Docker Plugin`,  `Docker Pipeline`, and `Jacoco` plugins, then click `Install without restart`. Note: No need to install the other `Git plugin` which is already installed can be seen under `Installed` tab.
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## MSP 13 - Prepare Continuous Integration (CI) Pipeline
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+* Create `feature/msp-13` branch from `dev`.
+
+``` bash
+git checkout dev
+git branch feature/msp-13
+git checkout feature/msp-13
+```
+
+* Create a folder, named `jenkins`, to keep `Jenkinsfiles` and `Jenkins jobs` of the project.
+
+``` bash
+mkdir jenkins
+```
+* Create a Jenkins job with the name of `petclinic-ci-job`: 
+  * Select `Freestyle project` and click `OK`
+  * Select github project and write the url to your repository's page into `Project url` (https://github.com/[your-github-account]/petclinic-microservices)
+  * Under the `Source Code Management` select `Git` 
+  * Write the url of your repository into the `Repository URL` (https://github.com/[your-github-account]/petclinic-microservices.git)
+  * Add `*/dev`, `*/feature**` and `*/bugfix**` branches to `Branches to build`
+  * Select `GitHub hook trigger for GITScm polling` under  `Build triggers`
+  * Select `Add timestamps to the Console Output` under `Build Environment`
+  * Click `Add build step` under `Build` and select `Execute Shell`
+  * Write below script into the `Command`
+    ```bash
+    echo 'Running Unit Tests on Petclinic Application'
+    docker run --rm -v $HOME/.m2:/root/.m2 -v `pwd`:/app -w /app maven:3.8-openjdk-11 mvn clean test
+    ```
+  * Click `Add post-build action` under `Post-build Actions` and select `Record jacoco coverage report`
+  * Click `Save`
+  
+* Jenkins `CI Job` should be triggered to run on each commit of `feature**` and `bugfix**` branches and on each `PR` merge to `dev` branch.
+
+* Prepare a script for Jenkins CI job (covering Unit Test only) and save it as `jenkins-petclinic-ci-job.sh` under `jenkins` folder.
+
+``` bash
+echo 'Running Unit Tests on Petclinic Application'
+docker run --rm -v $HOME/.m2:/root/.m2 -v `pwd`:/app -w /app maven:3.8-openjdk-11 mvn clean test
+```
+* Create a webhook for Jenkins CI Job; 
+
+  + Go to the project repository page and click on `Settings`.
+
+  + Click on the `Webhooks` on the left hand menu, and then click on `Add webhook`.
+
+  + Copy the Jenkins URL, paste it into `Payload URL` field, add `/github-webhook/` at the end of URL, and click on `Add webhook`.
+  
+  ``` text
+  http://[jenkins-server-hostname]:8080/github-webhook/
+  ```
+
+* Commit the change, then push the Jenkinsfile to the remote repo.
+
+``` bash
+git add .
+git commit -m 'added Jenkins Job for CI pipeline'
+git push --set-upstream origin feature/msp-13
+git checkout dev
+git merge feature/msp-13
+git push origin dev
+```
