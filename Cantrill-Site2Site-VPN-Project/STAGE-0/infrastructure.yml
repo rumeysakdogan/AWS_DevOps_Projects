@@ -1,0 +1,545 @@
+Description:  Advanced Demo - Simple Site2Site VPN (apply in us-east-1), you need to agree to this before running https://aws.amazon.com/marketplace/pp?sku=cphb99lr7icr3n9x6kc3102s5. you will also need a valid SSH key configured in us-east-1.
+Parameters:
+  LatestAmiId:
+    Description: AMI for Instances (default is latest AmaLinux2)
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  Win2016AmiId:
+    Description: AMI for Instances (default is latest WinServer2016)
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base'
+  pfSenseAmiId:
+    Description: AMI for pfSense firewall
+    Type: 'String'
+    Default: 'ami-04bc6d4450ef0ebc7'
+  KeyPairName:
+    Description: KeyPair for onpremServer
+    Type: AWS::EC2::KeyPair::KeyName
+Resources:
+  awsVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.16.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: A4L-AWS
+  awsSnPrivateA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref awsVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.16.32.0/20
+      Tags:
+        - Key: Name
+          Value: sn-aws-private-A
+  awsSnPrivateB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref awsVPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.16.96.0/20
+      Tags:
+        - Key: Name
+          Value: sn-aws-private-B
+  awsRTCustom: 
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref awsVPC
+      Tags:
+      - Key: Name
+        Value: rt-aws
+  awsRTAssociationPrivateA:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref awsSnPrivateA
+      RouteTableId:
+        Ref: awsRTCustom
+  awsRTAssociationPrivateB:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref awsSnPrivateB
+      RouteTableId:
+        Ref: awsRTCustom
+  awsSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref awsVPC
+      GroupDescription: Default A4L aws SG
+      Tags:
+      - Key: Name
+        Value: Default A4L aws SG
+  awsSGSelfReference:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      GroupId: !Ref awsSG
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref awsSG
+  awsEC2Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'ssm:DescribeAssociation'
+                  - 'ssm:GetDeployablePatchSnapshotForInstance'
+                  - 'ssm:GetDocument'
+                  - 'ssm:DescribeDocument'
+                  - 'ssm:GetManifest'
+                  - 'ssm:GetParameter'
+                  - 'ssm:GetParameters'
+                  - 'ssm:ListAssociations'
+                  - 'ssm:ListInstanceAssociations'
+                  - 'ssm:PutInventory'
+                  - 'ssm:PutComplianceItems'
+                  - 'ssm:PutConfigurePackageResult'
+                  - 'ssm:UpdateAssociationStatus'
+                  - 'ssm:UpdateInstanceAssociationStatus'
+                  - 'ssm:UpdateInstanceInformation'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ssmmessages:CreateControlChannel'
+                  - 'ssmmessages:CreateDataChannel'
+                  - 'ssmmessages:OpenControlChannel'
+                  - 'ssmmessages:OpenDataChannel' 
+                Resource: '*'
+              - Effect: Allow
+                Action: 
+                  - 'ec2messages:AcknowledgeMessage'
+                  - 'ec2messages:DeleteMessage'
+                  - 'ec2messages:FailMessage'
+                  - 'ec2messages:GetEndpoint'
+                  - 'ec2messages:GetMessages'
+                  - 'ec2messages:SendReply'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: '*'
+  awsEC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref awsEC2Role
+  awsVPCeSSM:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref awsSnPrivateA
+        - !Ref awsSnPrivateB
+      SecurityGroupIds:
+        - !Ref awsSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
+      VpcId: !Ref awsVPC
+  awsVPCeSSMEC2Messages:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref awsSnPrivateA
+        - !Ref awsSnPrivateB
+      SecurityGroupIds:
+        - !Ref awsSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
+      VpcId: !Ref awsVPC
+  awsVPCeSSMMessages:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref awsSnPrivateA
+        - !Ref awsSnPrivateB
+      SecurityGroupIds:
+        - !Ref awsSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
+      VpcId: !Ref awsVPC 
+  awsVPCeS3:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      RouteTableIds:
+        - !Ref awsRTCustom
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcId: !Ref awsVPC
+  awsVPCeCloudFormation:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref awsSnPrivateA
+        - !Ref awsSnPrivateB
+      SecurityGroupIds:
+        - !Ref awsSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.cloudformation
+      VpcId: !Ref awsVPC 
+  awsServerA:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    DependsOn: 
+      - awsVPCeSSM
+      - awsVPCeSSMEC2Messages
+      - awsVPCeSSMMessages
+    Properties:
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref awsENIServerPrivateA
+        DeviceIndex: 0
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      InstanceType: "t3.micro"
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref awsEC2InstanceProfile
+      Tags:
+        - Key: Name
+          Value: awsServerA
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y && yum upgrade -y
+          yum -y install httpd  
+          systemctl enable httpd
+          systemctl start httpd
+          instanceId=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+          wget -O /var/www/html/cat.gif "https://learn-cantrill-labs.s3.amazonaws.com/aws-simple-site2site-vpn/cat.jpg"
+          echo "<html><head></head><body\">" >> /var/www/html/index.html
+          echo "<center><h1>Instance ID : $instanceId</h1></center><br>" >> /var/www/html/index.html
+          echo "<center><img src=\"cat.gif\"></center>" >> /var/www/html/index.html
+          echo "</body></html>" >> /var/www/html/index.html
+          # Step 4 - permissions 
+          usermod -a -G apache ec2-user   
+          chown -R ec2-user:apache /var/www
+          chmod 2775 /var/www
+          find /var/www -type d -exec chmod 2775 {} \;
+          find /var/www -type f -exec chmod 0664 {} \;   
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource awsServerA --region ${AWS::Region}
+  awsENIServerPrivateA:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SubnetId: !Ref awsSnPrivateA
+      Description: awsServer PRIVATE INTERFACE
+      GroupSet: 
+      - !Ref awsSG
+      SourceDestCheck: true
+      Tags:
+        -
+          Key: Name
+          Value: awsServer Private A ENI
+  onpremVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 192.168.8.0/21
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: A4L-ONPREM
+  onpremIGW:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+      - Key: Name
+        Value: IGW-ONPREM
+  onpremIGWAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref onpremVPC
+      InternetGatewayId: !Ref onpremIGW
+  onpremSnPublic:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref onpremVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 192.168.12.0/24
+      Tags:
+        - Key: Name
+          Value: sn-onprem-public
+  onpremSnPrivate:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref onpremVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 192.168.10.0/24
+      Tags:
+        - Key: Name
+          Value: sn-onprem-private
+  onpremRTPrivate: 
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref onpremVPC
+      Tags:
+      - Key: Name
+        Value: rt-onprem-private
+  onpremRTPublic: 
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref onpremVPC
+      Tags:
+      - Key: Name
+        Value: rt-onprem-public
+  onpremRouteDefaultIPV4Pub: 
+    Type: 'AWS::EC2::Route'
+    DependsOn: onpremIGWAttachment
+    Properties:
+      RouteTableId:
+        Ref: onpremRTPublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId:
+        Ref: onpremIGW
+  onpremRTAssociationPrivate:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref onpremSnPrivate
+      RouteTableId:
+        Ref: onpremRTPrivate
+  onpremRTAssociationPublic:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref onpremSnPublic
+      RouteTableId:
+        Ref: onpremRTPublic
+  onpremEC2Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'ssm:DescribeAssociation'
+                  - 'ssm:GetDeployablePatchSnapshotForInstance'
+                  - 'ssm:GetDocument'
+                  - 'ssm:DescribeDocument'
+                  - 'ssm:GetManifest'
+                  - 'ssm:GetParameter'
+                  - 'ssm:GetParameters'
+                  - 'ssm:ListAssociations'
+                  - 'ssm:ListInstanceAssociations'
+                  - 'ssm:PutInventory'
+                  - 'ssm:PutComplianceItems'
+                  - 'ssm:PutConfigurePackageResult'
+                  - 'ssm:UpdateAssociationStatus'
+                  - 'ssm:UpdateInstanceAssociationStatus'
+                  - 'ssm:UpdateInstanceInformation'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ssmmessages:CreateControlChannel'
+                  - 'ssmmessages:CreateDataChannel'
+                  - 'ssmmessages:OpenControlChannel'
+                  - 'ssmmessages:OpenDataChannel' 
+                Resource: '*'
+              - Effect: Allow
+                Action: 
+                  - 'ec2messages:AcknowledgeMessage'
+                  - 'ec2messages:DeleteMessage'
+                  - 'ec2messages:FailMessage'
+                  - 'ec2messages:GetEndpoint'
+                  - 'ec2messages:GetMessages'
+                  - 'ec2messages:SendReply'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'sns:*'
+                Resource: '*'
+  onpremEC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref onpremEC2Role
+  onpremSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref onpremVPC
+      GroupDescription: Default A4L onprem SG
+      Tags:
+      - Key: Name
+        Value: Default A4L onprem SG
+      SecurityGroupIngress: 
+        - Description: 'Allow tcp/443 from anywhere'
+          IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: '0.0.0.0/0'
+  onpremSGSelfReference:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      GroupId: !Ref onpremSG
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref onpremSG
+  onpremRouterSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref onpremVPC
+      GroupDescription: onprem Router SG
+      Tags:
+      - Key: Name
+        Value: onprem Router SG
+      SecurityGroupIngress: 
+        - Description: 'Allow tcp/443 from anywhere'
+          IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: '0.0.0.0/0'
+  onpremRouterSGSelfReference:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      GroupId: !Ref onpremRouterSG
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref onpremRouterSG
+  onpremVPCeSSM:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref onpremSnPublic
+      SecurityGroupIds:
+        - !Ref onpremSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
+      VpcId: !Ref onpremVPC
+  onpremVPCeSSMEC2Messages:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref onpremSnPublic
+      SecurityGroupIds:
+        - !Ref onpremSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
+      VpcId: !Ref onpremVPC
+  onpremVPCeSSMMessages:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: "Interface"
+      PrivateDnsEnabled: "True"
+      SubnetIds:
+        - !Ref onpremSnPublic
+      SecurityGroupIds:
+        - !Ref onpremSG
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
+      VpcId: !Ref onpremVPC
+  onpremRouterEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: onpremIGWAttachment
+  onpremRouterEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt onpremRouterEIP.AllocationId
+      NetworkInterfaceId: !GetAtt onpremENIRouterPublic.Id
+  onpremRouter:
+    Type: AWS::EC2::Instance
+    DependsOn: 
+      - onpremVPCeSSM
+      - onpremVPCeSSMEC2Messages
+      - onpremVPCeSSMMessages
+    Properties:
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref onpremENIRouterPublic
+        DeviceIndex: 0
+      - NetworkInterfaceId: !Ref onpremENIRouterPrivate
+        DeviceIndex: 1
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      InstanceType: "t3.small"
+      ImageId: !Ref pfSenseAmiId
+      IamInstanceProfile: !Ref onpremEC2InstanceProfile
+      Tags:
+        - Key: Name
+          Value: onpremRouter
+  onpremENIRouterPrivate:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SubnetId: !Ref onpremSnPrivate
+      Description: onpremRouter PRIVATE INTERFACE
+      GroupSet: 
+      - !Ref onpremRouterSG
+      SourceDestCheck: false
+      Tags:
+        -
+          Key: Name
+          Value: onpremRouter Private ENI
+  onpremENIRouterPublic:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SubnetId: !Ref onpremSnPublic
+      Description: Router1 PUBLIC INTERFACE
+      GroupSet: 
+      - !Ref onpremRouterSG
+      SourceDestCheck: false
+      Tags:
+        -
+          Key: Name
+          Value: onpremRouter Public ENI
+  onpremServer:
+    Type: AWS::EC2::Instance
+    DependsOn: 
+      - onpremVPCeSSM
+      - onpremVPCeSSMEC2Messages
+      - onpremVPCeSSMMessages
+    Properties:
+      NetworkInterfaces:
+      - NetworkInterfaceId: !Ref onpremENIServerPrivate
+        DeviceIndex: 0
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      InstanceType: "t3.medium"
+      ImageId: !Ref Win2016AmiId
+      KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Ref onpremEC2InstanceProfile
+      Tags:
+        - Key: Name
+          Value: onpremServer
+  onpremENIServerPrivate:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SubnetId: !Ref onpremSnPrivate
+      Description: onpremServer PRIVATE INTERFACE
+      GroupSet: 
+      - !Ref onpremSG
+      SourceDestCheck: true
+      Tags:
+        -
+          Key: Name
+          Value: onpremServer Private ENI
+Outputs:
+  onpremRouterIP:
+    Description: Public IPv4 Address for on-premises router
+    Value: !Ref onpremRouterEIP
