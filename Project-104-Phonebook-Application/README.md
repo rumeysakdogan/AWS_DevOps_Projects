@@ -6,7 +6,7 @@ The Phonebook Application aims to create a phonebook application in Python and d
 
 ## Problem Statement
 
-![Project_004](003_phonebook.png)
+![Project_104](104_phonebook.png)
 
 - Your company has recently started a project that aims to serve as phonebook web application. You and your colleagues have started to work on the project. Your teammates have developed the UI part the project as shown in the template folder and they need your help to develop the coding part and deploying the app in development environment.
 
