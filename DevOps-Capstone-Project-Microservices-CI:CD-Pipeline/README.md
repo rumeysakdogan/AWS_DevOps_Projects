@@ -2515,7 +2515,7 @@ helm package petclinic_chart/
 * Store the local package in the Amazon S3 Helm repository.
 
 ```bash
-HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-1.1.1.tgz stable-petclinicapp
+HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-0.0.1.tgz stable-petclinicapp
 ```
 
 * Search for the Helm chart.
@@ -2540,7 +2540,7 @@ helm package petclinic_chart/
 * Push the new version to the Helm repository in Amazon S3.
 
 ```bash
-HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-1.1.2.tgz stable-petclinicapp
+HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-0.0.2.tgz stable-petclinicapp
 ```
 
 * Verify the updated Helm chart.
@@ -2806,7 +2806,6 @@ git push --set-upstream origin feature/msp-18
       Command:
 ```
 ```bash
-cd petclinic-microservices-with-db/
 ansible-playbook --connection=local --inventory 127.0.0.1, --extra-vars "workspace=$(pwd)" ./ansible/playbooks/pb_run_dummy_selenium_job.yaml
 ```
 
@@ -3130,13 +3129,15 @@ kind: ClusterConfig
 
 metadata:
   name: petclinic-cluster
-  region: eu-north-1
-nodeGroups:
-  - name: ng-1
-    instanceType: t3.medium
-    desiredCapacity: 2
-    volumeSize: 8
+  region: us-east-1
 availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+managedNodeGroups:
+  - name: ng-1
+    instanceType: t3a.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 3
+    volumeSize: 8
 ```
 
 - Create an EKS cluster via `eksctl`. It will take a while.
@@ -3159,6 +3160,7 @@ git push origin dev
 - After the cluster is up, run the following command to install `ingress controller`.
 
 ```bash
+export PATH=$PATH:$HOME/bin
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
 ```
 
