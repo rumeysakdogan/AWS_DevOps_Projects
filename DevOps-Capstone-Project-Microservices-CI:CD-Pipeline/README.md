@@ -45,8 +45,7 @@ This project aims to create full CI/CD Pipeline for microservice based applicati
 | QA Automation Setup for Development | Create a QA Automation Environment - Part-2 | MSP-16  | Create a QA Automation Environment with Kubernetes. | feature/msp-16 |
 | QA Automation Setup for Development | Prepare Petlinic Kubernetes YAML Files | MSP-17  | Prepare Petlinic Kubernetes YAML Files. | feature/msp-17 |
 | QA Automation Setup for Development | Prepare a QA Automation Pipeline | MSP-18  | Prepare a QA Automation Pipeline on `dev` branch for Nightly Builds. | feature/msp-18 |
-| QA Setup for Release | Create a Key Pair for QA Environment | MSP-19-1  | Create a permanent Key Pair for Ansible to be used in QA Environment on Release. | feature/msp-19 |
-| QA Setup for Release | Create a QA Infrastructure with Terrafrom and Ansible | MSP-19-2  | Create a Permanent QA Infrastructure for Kubernetes Cluster with Terraform and Ansible. | feature/msp-19 |
+| QA Setup for Release | Create a QA Infrastructure with eksctl | MSP-19  | Create a Permanent QA Infrastructure for Kubernetes Cluster with eksctl. | feature/msp-19 |
 | QA Setup for Release | Prepare Build Scripts for QA Environment | MSP-20  | Prepare Build Scripts for QA Environment | feature/msp-20 |
 | QA Setup for Release | Build and Deploy App on QA Environment Manually | MSP-21  | Build and Deploy App for QA Environment Manually using Jenkins Jobs. | feature/msp-21 | 
 | QA Setup for Release | Prepare a QA Pipeline | MSP-22  | Prepare a QA Pipeline using Jenkins on `release` branch for Weekly Builds. | feature/msp-22 |
@@ -3083,12 +3082,6 @@ sudo mv /tmp/eksctl /usr/local/bin
 eksctl version
 ```
 
-- Switch user to jenkins for creating eks cluster. Execute following commands as `jenkins` user.
-
-```bash
-sudo su - jenkins
-```
-
 ### Install kubectl
 
 - Download the Amazon EKS vended kubectl binary.
@@ -3103,22 +3096,22 @@ curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.23.7/2022-06-29/
 chmod +x ./kubectl
 ```
 
-- Copy the binary to a folder in your PATH. If you have already installed a version of kubectl, then we recommend creating a $HOME/bin/kubectl and ensuring that $HOME/bin comes first in your $PATH.
+- Move the kubectl binary to /usr/local/bin.
 
 ```bash
-mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
-```
-
-- (Optional) Add the $HOME/bin path to your shell initialization file so that it is configured when you open a shell.
-
-```bash
-echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+sudo mv kubectl /usr/local/bin
 ```
 
 - After you install kubectl , you can verify its version with the following command:
 
 ```bash
 kubectl version --short --client
+```
+
+- Switch user to jenkins for creating eks cluster. Execute following commands as `jenkins` user.
+
+```bash
+sudo su - jenkins
 ```
 
 - Create a `cluster.yaml` file under `/varlib/jenkins` folder.
@@ -3193,7 +3186,7 @@ AWS_REGION="us-east-1"
 aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
 aws ecr create-repository \
  --repository-name ${APP_REPO_NAME} \
- --image-scanning-configuration scanOnPush=true \
+ --image-scanning-configuration scanOnPush=false \
  --image-tag-mutability MUTABLE \
  --region ${AWS_REGION}
 ```
@@ -3301,7 +3294,7 @@ git checkout feature/msp-21
 - Create a ``Jenkins Job`` with name of `build-and-deploy-petclinic-on-qa-env` to build and deploy the app on `QA environment` manually on `release` branch using following script, and save the script as `build-and-deploy-petclinic-on-qa-env-manually.sh` under `jenkins` folder.
 
 ```yml
-- job name:   
+- job name: build-and-deploy-petclinic-on-qa-env  
 - job type: Freestyle project
 - Source Code Management: Git
       Repository URL: https://github.com/[your-github-account]/petclinic-microservices.git
@@ -3474,3 +3467,9 @@ git push origin release
 ```
 * Click `save`.
 * Click `Build Now`
+
+- Delete  EKS cluster via `eksctl`. It will take a while.
+
+```bash
+eksctl delete cluster -f cluster.yaml
+```
