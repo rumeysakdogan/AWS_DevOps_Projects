@@ -3487,7 +3487,7 @@ git checkout feature/msp-23
 ```
 
 * Explain [Rancher Container Management Tool](https://rancher.com/docs/rancher/v2.x/en/overview/architecture/).
-![](rancher-installation.png)
+
 * Create an IAM Policy with name of `petclinic-rke-controlplane-policy.json` and also save it under `infrastructure` for `Control Plane` node to enable Rancher to create or remove EC2 resources.
 
 ``` json
@@ -3830,7 +3830,7 @@ Region            : us-east-1
 Security group    : create new sg (rancher-nodes)
 Instance Type     : t3a.medium
 Root Disk Size    : 16 GB
-AMI (RancherOS)   : ami-0e8a3347e4c5959bd
+AMI (RancherOS)   : ami-02fe87f853d560d52
 SSH User          : rancher
 Label             : os=rancheros
 ```
@@ -4091,9 +4091,9 @@ docker push "${IMAGE_TAG_PROMETHEUS_SERVICE}"
 * Install `Rancher CLI` on Jenkins Server.
 
 ```bash
-curl -SsL "https://github.com/rancher/cli/releases/download/v2.6.5/rancher-linux-amd64-v2.6.5.tar.gz" -o "rancher-cli.tar.gz"
+curl -SsL "https://github.com/rancher/cli/releases/download/v2.6.7/rancher-linux-amd64-v2.6.7.tar.gz" -o "rancher-cli.tar.gz"
 tar -zxvf rancher-cli.tar.gz
-sudo mv ./rancher-v2.6.5/rancher /usr/local/bin/rancher
+sudo mv ./rancher-v2.6.7/rancher /usr/local/bin/rancher
 chmod +x /usr/local/bin/rancher
 rancher --version
 ```
