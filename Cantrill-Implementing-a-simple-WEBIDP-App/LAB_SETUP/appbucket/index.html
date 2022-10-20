@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>PetIDF Demo</title>
+    <meta name="author" content="acantril">
+    <meta name="google-signin-scope" content="profile email">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.2.19.min.js"></script>
+    <script src="scripts.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+
+    <div id="g_id_onload"
+         data-client_id="1049351326960-nmu8h3ke6ck2edpbvdjuhcv0823cgmbp.apps.googleusercontent.com"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="onSignIn"
+         data-auto_prompt="false">
+    </div>
+    
+    <div class="g_id_signin" data-type="standard"></div>
+    <p />
+    <div id="viewer"></div>
+    <div id="output"></div>
+    
+  </body>
+</html>
