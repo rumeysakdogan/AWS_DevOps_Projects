@@ -2,7 +2,7 @@
 
 *Demo Source*:  https://medium.com/@kinseyparham/create-ci-cd-pipelines-for-terraform-in-gitlab-f3f6239b6724
 
-![](images/Demo-Architecture.png)
+![](images/DEMO_ARCH.png)
 ## Setting up File System
 - In this demo, we will create a Gitlab CI-CD Pipeline with Terraform.
 
