@@ -1,0 +1,54 @@
+image:
+  name: registry.gitlab.com/gitlab-org/gitlab-build-images:terraform
+  entrypoint:
+    - '/usr/bin/env'
+    - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+variables:
+  TF_VAR_gitlab_token: ${GITLAB_ACCESS_TOKEN}
+  AWS_ACCESS_KEY_ID: ${MY_AWS_KEY}
+  AWS_SECRET_ACCESS_KEY : ${MY_AWS_ACCESS_KEY}
+  AWS_DEFAULT_REGION: "us-east-1"
+
+cache:
+  paths:
+    - .terraform
+
+before_script:
+  - terraform --version
+  - terraform init -backend-config="tfstate.config"
+
+stages:
+  - validate
+  - plan
+  - apply
+  - destroy
+
+validate:
+  stage: validate
+  script:
+    - terraform validate
+
+plan:
+  stage: plan
+  script:
+    - terraform plan -out="planfile"
+  dependencies:
+    - validate
+  artifacts:
+    paths:
+      - planfile
+
+apply:
+  stage: apply
+  script:
+    - terraform apply -input=false "planfile"
+  dependencies:
+    - plan
+  when: manual
+
+destroy: 
+  stage: destroy
+  script:
+    - terraform destroy --auto-approve
+  when: manual 
