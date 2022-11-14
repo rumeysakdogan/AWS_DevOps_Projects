@@ -1,9 +1,8 @@
 # Jenkins CI/CD Project with Ansible and Kubernetes
 
-[*Project Source*](https://www.udemy.com/share/1023P43@TzHtDv17OEytQAPjLwu3e4zLrmxgSAIF0MbMFfhEKzFw7b_BGV_d1gNXdAKXNPxs/)
+*Project Source* : ![](https://www.udemy.com/share/1023P43@TzHtDv17OEytQAPjLwu3e4zLrmxgSAIF0MbMFfhEKzFw7b_BGV_d1gNXdAKXNPxs/)
   
 ![Project-architecture](project.png)
-
 ## CI/CD Pipeline using Git,Jenkins and Maven
 
 ### Step1: Configure Jenkins Server
@@ -101,7 +100,6 @@ Goals and options: clean install
 ```
 
 - now we can go to `/var/lib/jenkins/workspace/FirstMavenProject/webapp/target` to see our build artifact webapp.war file.
-
 
 ## Integrating Tomcat server in CI/CD Pipeline
 
@@ -215,6 +213,7 @@ Tomcat URL: http://<Public_IP_of_Tomcat_server>:8080/
 
 - `Save` and `Build` the job. When go to Tomcat server under `Manager App`, you will be able to see our application under `webapp/`
 
+![](app-v1-deployed-to-tomcat.png)
 ### Step3: Automate Build and Deploy using Poll SCM
 
 - We can configure our job to be triggered with `Poll SCM` by scheduling a cron job. It will check the repository based on given schedule. If there is any change in repository, it will trigger job and deployed the new version of app to Tomcat server.
@@ -293,6 +292,7 @@ docker run -d --name tomcat-container-fixed -p 8085:8080 tomcat-fixed
 
 - We can check our Tomcat server in browser now.
 
+![app-v2](app-v2-deployed-to-tomcat.png)
 ### Step4: Integrate Docker with Jenkins
 
 - We will create a new user/password called `dockeradmin` and add it to `docker` group
