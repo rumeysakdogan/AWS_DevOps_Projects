@@ -1,0 +1,42 @@
+
+h1 {
+   padding-top: 1rem;
+}
+
+.logotext  {
+    font-size: 1.5em !important;
+}
+.jumbotron {
+    padding: 2rem !important;
+}
+.gauges {
+    width: 100%; 
+    height: 25vw; 
+    margin: 0 auto;
+}
+
+/* Sortable tables */
+table.sortable th {
+    background-color: #eeeeee;
+    color:#666666;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px;
+}
+
+td {
+    padding-right: 50px !important;
+    font-size: 18px;
+    border-bottom: 1px solid #dddddd;
+    cursor: default;
+}
+
+.icon {
+    width: 40px;
+}
+
+.dimmed-box {
+    background-color: rgba(0,0,0,0.2);
+    padding: 1rem;
+    border-radius: 0.3rem;
+}

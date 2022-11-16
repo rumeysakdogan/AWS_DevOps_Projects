@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block content %}
+
+<script src="/static/js/sorttable.js"></script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="/static/js/monitor.js"></script>
+<script type="text/javascript">
+  google.charts.load('current', { packages: ['gauge'] })
+  google.charts.setOnLoadCallback(initCharts)
+</script>
+
+<body>
+  <span style="float: right">
+    Refresh Rate: <span id="refrate"></span> secs<input id="refslider" type="range" min="2" max="15" />
+  </span>
+  <br />
+  <h2>👓 Running Processes (<span id="proc_count"></span>)</h2>
+  <div style="height: 200px; overflow: scroll">
+    <table class="sortable">
+      <thead>
+        <tr>
+          <th>PID</th>
+          <th>Name</th>
+          <th>Mem</th>
+          <th>CPU Time</th>
+          <th>Threads</th>
+        </tr>
+      </thead>
+      <tbody id="process_tab"></tbody>
+    </table>
+  </div>
+
+  <hr />
+
+  <h2>🌡 Performance Monitor</h2>
+  <div id="chart1" class="gauges"></div>
+  <div id="chart2" class="gauges"></div>
+  <div id="chart3" class="gauges"></div>
+</body>
+
+{% endblock %}

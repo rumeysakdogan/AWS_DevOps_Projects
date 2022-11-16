@@ -1,0 +1,140 @@
+{
+  "info": {
+    "_postman_id": "d758a295-d6e7-40ac-a6ba-d9312cf9bbe5",
+    "name": "Python Demoapp",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Check Home Page",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Home Page: Successful GET request\", function () {",
+              "    pm.response.to.be.ok;",
+              "});",
+              "",
+              "pm.test(\"Home Page: Response valid & HTML body\", function () {",
+              "    pm.response.to.be.withBody;",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.contain('text/html');",
+              "});",
+              "",
+              "pm.test(\"Home Page: Check content\", function () {",
+              "    pm.expect(pm.response.text()).to.include('Python');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://{{apphost}}/",
+          "protocol": "http",
+          "host": ["{{apphost}}"],
+          "path": [""]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Info Page",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Info Page: Successful GET request\", function () {",
+              "    pm.response.to.be.ok;",
+              "});",
+              "",
+              "pm.test(\"Info Page: Response valid & HTML body\", function () {",
+              "    pm.response.to.be.withBody;",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.contain('text/html');",
+              "});",
+              "",
+              "pm.test(\"Info Page: Check content\", function () {",
+              "    pm.expect(pm.response.text()).to.include('Network Interfaces');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://{{apphost}}/info",
+          "protocol": "http",
+          "host": ["{{apphost}}"],
+          "path": ["info"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Process API",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Process API: Successful GET request\", function () {",
+              "    pm.response.to.be.ok;",
+              "});",
+              "",
+              "pm.test(\"Process API: Response valid & JSON body\", function () {",
+              "    pm.response.to.be.withBody;",
+              "    pm.response.to.be.json;",
+              "});",
+              "",
+              "pm.test(\"Process API: Check API response\", function () {",
+              "    var processData = pm.response.json();",
+              "    pm.expect(processData.processes).to.be.an('array')",
+              "    pm.expect(processData.processes[0].name).to.be.an('string')",
+              "    pm.expect(processData.processes[0].memory_percent).to.be.an('number')",
+              "    pm.expect(processData.processes[0].pid).to.be.an('number')",
+              "});",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://{{apphost}}/api/process",
+          "protocol": "http",
+          "host": ["{{apphost}}"],
+          "path": ["api", "process"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="">
+  <h1>🛠 System Information</h1>
+  <table class="table table-striped table-hover" style="font-size: 1.5em">
+    <tbody>
+      <tr>
+        <td><b>Hostname</b></td>
+        <td>{{ info.plat.node() }}</td>
+      </tr>
+      <tr>
+        <td><b>Boot Time</b></td>
+        <td>{{ info.boottime }}</td>
+      </tr>
+      <tr>
+        <td><b>OS Platform</b></td>
+        <td>{{ info.plat.system() }}</td>
+      </tr>
+      <tr>
+        <td><b>OS Version</b></td>
+        <td>{{ info.plat.version() }}</td>
+      </tr>
+      <tr>
+        <td><b>Python Version</b></td>
+        <td>{{ info.plat.python_version() }}</td>
+      </tr>
+      <tr>
+        <td><b>Processor &amp; Cores</b></td>
+        <td>{{ info.cpu.count }} x {{ info.cpu.brand }}</td>
+      </tr>
+      <tr>
+        <td><b>System Memory</b></td>
+        <td>{{ (info.mem.total / (1024*1024*1024)) | round(0,'ceil') |int }}GB ({{info.mem.percent}}% used)</td>
+      </tr>
+      <tr>
+        <td><b>Network Interfaces</b></td>
+        <td>
+          {% for iface, snics in info.net.items() %} {% for snic in snics if (snic.family == 2) %}
+          <li>{{ iface }} - <b>{{ snic.address }}</b></li>
+          {% endfor %} {% endfor %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

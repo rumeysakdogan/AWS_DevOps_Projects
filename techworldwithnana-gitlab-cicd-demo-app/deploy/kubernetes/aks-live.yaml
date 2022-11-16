@@ -1,0 +1,15 @@
+image:
+  repository: ghcr.io/benc-uk/python-demoapp
+  pullPolicy: Always
+
+service:
+  targetPort: 5000
+
+ingress:
+  enabled: true
+  host: python-demoapp.kube.benco.io
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  tls:
+    enabled: true
+    secretName: kube-benco-io-cert

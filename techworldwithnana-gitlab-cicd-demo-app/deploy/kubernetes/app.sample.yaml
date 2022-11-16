@@ -1,0 +1,23 @@
+#
+# See this Helm chart for all options
+# https://github.com/benc-uk/helm-charts/tree/master/webapp
+#
+
+image:
+  repository: ghcr.io/benc-uk/python-demoapp
+  tag: latest
+  pullPolicy: Always
+
+service:
+  targetPort: 5000
+  type: LoadBalancer
+
+#
+# If you have an ingress controller set up
+#
+# ingress:
+#   enabled: true
+#   host: changeme.example.net
+#   tls:
+#     enabled: true
+#     secretName: changeme-cert-secret
