@@ -1,4 +1,7 @@
 ## K8s Deployment of Demo App
+
+[*Project Source*](https://www.youtube.com/watch?v=X48VuDVv0do&t=8171s&ab_channel=TechWorldwithNana)
+
 In this project, we will deploy 2-Tier application with using Minikube cluster step by step. 
 
 *Step1*: We will deploy a mongodb database and a web application
