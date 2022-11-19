@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  This template was prepared by Rumeysa Dogan for AWS Capstone Project at ClarusWay ©2022 
+  This template is used to deploy AWS Capstone Project Infrastructure as a code.
 
 Parameters:
 
