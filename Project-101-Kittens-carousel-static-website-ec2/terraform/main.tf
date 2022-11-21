@@ -39,12 +39,12 @@ resource "aws_instance" "web_server" {
      yum update -y
      yum install httpd -y
      cd /var/www/html
-     FOLDER="https://raw.githubusercontent.com/rumeysakdogan/kitten-carousel/main/"
-     wget $FOLDERindex.html
-     wget $FOLDERcat0.jpg
-     wget $FOLDERcat1.jpg
-     wget $FOLDERcat2.jpg
-     wget $FOLDERcat3.png
+     FOLDER="https://raw.githubusercontent.com/rumeysakdogan/AWS_DevOps_Projects/main/Project-101-Kittens-carousel-static-website-ec2/static-web"
+     wget $FOLDER/index.html
+     wget $FOLDER/cat0.jpg
+     wget $FOLDER/cat1.jpg
+     wget $FOLDER/cat2.jpg
+     wget $FOLDER/cat3.png
      systemctl start httpd
      systemctl enable httpd
      EOF
