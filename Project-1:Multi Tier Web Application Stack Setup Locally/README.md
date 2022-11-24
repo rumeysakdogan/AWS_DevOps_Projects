@@ -23,7 +23,7 @@ git clone https://github.com/rumeysakdogan/vprofile-project.git
 vagrant plugin install vagrant-hostmanager
 ```
 
-- Agter plugin installed, we can run below command to setup our VMs.
+- After plugin installed, we can run below command to setup our VMs.
 ```sh
 vagrant up
 ```
