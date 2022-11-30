@@ -259,6 +259,8 @@ sleep 30
 reboot
 ```
 
+![](images/flow-chart.png)
+
 ### Step-4: Post Installation Steps
 
 #### For Jenkins Server:
