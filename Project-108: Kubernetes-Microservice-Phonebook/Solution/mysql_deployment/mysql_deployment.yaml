@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deploy
+  labels:
+    name: mysql-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: mysql-pod
+  template:
+    metadata:
+      name: mysql-pod
+      labels:
+        name: mysql-pod
+    spec:
+      containers:
+      - image: mysql:5.7
+        name: mysql
+        imagePullPolicy: Always #https://kubernetes.io/docs/concepts/configuration/overview/
+        env:
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-admin-password
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        envFrom:
+          - configMapRef:
+              name: database-configmap
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
