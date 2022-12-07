@@ -1,0 +1,92 @@
+- name: Install docker
+  gather_facts: No
+  any_errors_fatal: true
+  hosts: _ansible_react
+  become: true
+  tasks:
+    - name: upgrade all packages
+      yum: 
+        name: '*'
+        state: latest
+    # we may need to uninstall any existing docker files from the centos repo first.
+    - name: Remove docker if installed from CentOS repo
+      yum:
+        name: "{{ item }}"
+        state: removed
+      with_items:
+        - docker
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+    - name: Install yum utils
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - yum-utils
+    - name: Add Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+    - name: Install Docker
+      package:
+        name: docker-ce
+        state: latest
+    - name: Install pip
+      package:
+        name: python3-pip
+        state: present
+        update_cache: true
+    - name: Install docker sdk
+      pip:
+        name: docker
+    - name: Add user ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+    - name: create build directory
+      file:
+        path: /home/ec2-user/react
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    # at this point do not forget change DB_HOST env variable for postgresql node
+    - name: copy files to the nodejs node
+      copy:
+        src: /home/ec2-user/ansible-project/todo-app-pern/client/
+        dest: /home/ec2-user/react
+    - name: copy the Dockerfile
+      copy:
+        src: /home/ec2-user/ansible-project/react/Dockerfile
+        dest: /home/ec2-user/react
+    - name: remove cla_react container and clacw/react image if exists
+      shell: "docker ps -q --filter 'name=cla_react' && docker stop cla_react && docker rm -fv cla_react && docker image rm -f clacw/react || echo 'Not Found'"
+    - name: build container image
+      docker_image:
+        name: clacw/react
+        build:
+          path: /home/ec2-user/react
+        source: build
+        state: present
+    - name: Launch react docker container
+      docker_container:
+        name: cla_react
+        image: clacw/react
+        state: started
+        ports:
+        - "3000:3000"
+      register: container_info
+    - name: Print the container_info
+      debug:
+        msg: "{{ container_info }}"

@@ -1,0 +1,11 @@
+Hi DevOps Team
+
+- We have coded a web-site with postgreSQL database, nodejs and react frameworks. 
+
+- User infos are kept on postgreSQL database on backend. You should create a PostgreSQL container and a password for default user postgres. You don't need to create a different user for postgreSQL. 
+
+- To handshake nodejs container and postgreSQL database container, before creating nodejs image, you have to fill the necessary places ".env" file under server folder. This file is very important to connect database and nodejs backend server. 
+
+- To handshake react server and nodejs server, before creating react image, you have to fill the necessary places ".env" file under client folder. This file also is very important to connect nodejs backend server and react frontend server. 
+
+Thanks Future DevOps... Good Luck
