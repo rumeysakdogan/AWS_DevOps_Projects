@@ -1,1 +1,0 @@
-cat auth.log | grep -i "input_userauth_request" | cut -d' ' -f10 | uniq -c > invalid_user.sh
