@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phonebook Application</title>
+  <style>
+    body {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    div {
+      margin-top: 100px;
+      margin-bottom: 50px;
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    img {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 15px;
+      margin: 20px 0;
+      display: inline-block;
+      border: none;
+      background: #f1f1f1;
+    }
+
+    button {
+      box-sizing: border-box;
+      background-color: #4caf50;
+      color: white;
+      padding: 16px 20px;
+      margin: 8px 0;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      opacity: 0.9;
+    }
+
+    .warning {
+      color: red;
+    }
+
+    .sectionnote{
+      color: rgba(190, 31, 164, 0.89);
+    }
+    .footnote{
+      color: rgba(0, 0, 255, 0.712);
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div><img src="https://clarusway.com/wp-content/uploads/2020/06/clarusway_logo.png" /></div>
+
+  <h1>Project : Phonebook Application</h1>
+  <h2>Welcome to Rumeysa's Phonebook Application</h2>
+  <h2 class="sectionnote">Enter a name to search</h2>
+
+  <form action="#" method="post">
+    <label for="name"><b>Name:</b></label>
+    <input placeholder="Keyword" type="text" name="username" id="name">
+    <button type="submit">Search</button>
+    {% if show_result %}
+        <h1>Result for '{{ keyword }}' </h1>
+            <ul> 
+            {% for person in persons_html %}
+            <li>Name: <b>{{ person['name'] }} </b>  ---- Phone Number: <b>{{ person['number'] }}</b></li>
+            {% endfor %}
+            </ul>
+    {% endif %}
+  </form>
+
+  <p class="footnote"><i>This app is developed in Python by <b>Rumeysa</b> and deployed with Flask on AWS Cloud using Terraform Service.</i></p>
+</body>
+
+</html>
