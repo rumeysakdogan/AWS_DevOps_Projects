@@ -1,6 +1,0 @@
----
-# vars file for nodejs
-nodejs_home: /home/ec2-user/ansible/ansible-project/nodejs
-container_path: /home/ec2-user/nodejs
-container_name: cla_nodejs
-image_name: clacw/nodejs
