@@ -224,7 +224,8 @@ Create `docker-compose.yml` with below content.
 version: '3'
 services:
   vprodb:
-    image: <your_dockerhub_username>/vprofiledb:V1 
+    image: <your_dockerhub_username>/vprofiledb:V1
+    container_name: vprodb 
     ports:
       - "3306:3306"
     volumes:
@@ -234,11 +235,13 @@ services:
 
   vprocache01:
     image: memcached
+    container_name: vprocache01
     ports:
       - "11211:11211"
 
   vpromq01:
     image: rabbitmq
+    container_name: vpromq01
     ports:
       - "15672:157672"
     environment:
@@ -246,7 +249,8 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
 
   vproapp:
-    image: <your_dockerhub_username>/vprofileapp:V1 
+    image: <your_dockerhub_username>/vprofileapp:V1
+    container_name: vproapp 
     ports:
       - "8080:8080"
     volumes:
@@ -254,6 +258,7 @@ services:
 
   vproweb:
     image: <your_dockerhub_username>/vprofileweb:V1 
+    container_name: vproweb 
     ports:
       - "80:80"
 
