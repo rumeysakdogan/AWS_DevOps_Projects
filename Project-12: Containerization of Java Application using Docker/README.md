@@ -84,7 +84,7 @@ Next checkout the branch `docker`. You will see there is `Docker-files` director
 Create an `app` directory under `Docker-files` directory. Copy the below content to a file named as `Dockerfile`.
 
 ```sh
-FROM tomcat:8.5.84-jre11
+FROM tomcat:8-jre11
 LABEL "Project"="Vprofile"
 LABEL "Author"="Rumeysa"
 RUN rm -rf /usr/local/tomcat/webapps/*
@@ -205,7 +205,7 @@ Our Docker images are ready. Next we will build our containers with `Docker comp
 
 To run docker-compose commands, first we need to install it. We can go to [official documentation](https://docs.docker.com/compose/install/) and follow installation steps. 
 ```sh
-curl -SL https://github.com/docker/compose/releases/download/v2.14.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+sudo curl -SL https://github.com/docker/compose/releases/download/v2.14.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
 
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version
