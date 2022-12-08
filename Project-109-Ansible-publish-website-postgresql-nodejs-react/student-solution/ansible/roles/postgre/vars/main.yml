@@ -1,6 +1,0 @@
----
-# vars file for postgre
-postgre_home: /home/ec2-user/ansible/ansible-project/postgres
-postgre_container: /home/ec2-user/postgresql
-container_name: cla_postgre
-image_name: clacw/postgre
