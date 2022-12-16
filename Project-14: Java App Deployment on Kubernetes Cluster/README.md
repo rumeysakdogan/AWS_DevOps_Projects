@@ -16,6 +16,7 @@ _Note: Instance sizes that will be used for this project will not be under Free-
 We will launch an Ec2 to install kOps with below properties.
 ```sh
 Name: kops
+AMI: Ubuntu 20.04
 InstanceType: t2.micro
 SecGrp: allow SSH on port 22 from MyIP
 KeyPair: create a new keypair
@@ -68,7 +69,7 @@ aws configure
 
 ### Step-6: Setup kOps Cluster
 
-As per Kubernetes official documentation, we need to install `kubectl` and `kops`. Follow steps from documentation[https://kubernetes.io/docs/setup/production-environment/tools/kops/].Once installation steps are complete, run below commands to check if they are ready to use.
+As per Kubernetes official documentation, we need to install `kubectl` and `kops`. Follow steps from [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kops/).Once installation steps are complete, run below commands to check if they are ready to use.
 
 ```sh
 kops version
