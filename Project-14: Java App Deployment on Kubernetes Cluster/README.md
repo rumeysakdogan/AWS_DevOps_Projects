@@ -99,7 +99,7 @@ kops update cluster --name kubeapp.aws-devops-journey-of-rumeysadogan.net --stat
 
 After issuing thsi command, wait 10-15 minutes before validating the cluster with below command:
 ```sh
-kops validate cluster --state=kubeapp-kops-state
+kops validate cluster --state=s3://kubeapp-kops-state
 ```
 
 ![](img/validate-cluster.png)
