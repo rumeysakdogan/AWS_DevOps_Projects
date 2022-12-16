@@ -562,7 +562,10 @@ SONARSCANNER = 'sonarscanner'
 ![](images/sonar-quality-gate-status.png)
 ![](images/scanning-complete.png)
 
-- We can create our own Quality Gates and add to our project as well. Next we will create a Webhook in SonarQube to send the anaylysis results to jenkins.
+- We can create our own Quality Gates and add to our project as well. click `Quality gate` -> `Create`. add `Condition`. You can give `Bug is greater than 80` then Save it.
+click on projectname it will have a dropdown, click `Quality Gate` and choose the new Quality gate you have created.  
+
+Next we will create a Webhook in SonarQube to send the analysis results to jenkins.
 
 ```sh
 http://<private_ip_of_jenkins>:8080/sonarqube-webhook
