@@ -234,7 +234,7 @@ Lastly, we can verify our memcached service.
 We will start with deleting our kubernetes services first. Then we will delete our cluster, s3 bucket, Route53 Hosted zone.
 ```sh
 kops delete cluster --name=kubeapp.aws-devops-journey-of-rumeysadogan.net \
---state=s3://kubeapp-kops-state -yes
+--state=s3://kubeapp-kops-state --yes
 ```
 
 
