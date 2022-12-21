@@ -1,0 +1,149 @@
+- name: install docker and config
+  hosts: _development
+  become: true
+  vars:
+    aws_region: us-east-1
+    ecr_registry: 392530415763.dkr.ecr.us-east-1.amazonaws.com 
+  tasks:
+    - name: update all packages
+      yum:
+        name: '*'
+        state: latest
+
+    # we may need to uninstall any existing docker files from the centos repo first.
+    - name: Remove docker if installed from CentOS repo
+      yum:
+        name: "{{ item }}"
+        state: removed
+      with_items:
+        - docker
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+
+    - name: Install yum utils
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - yum-utils
+        - device-mapper-persistent-data
+        - lvm2
+        - unzip
+
+    - name: Add Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docer-ce.repo
+
+    - name: Install Docker
+      package:
+        name: docker-ce
+        state: latest
+
+    - name: Install pip
+      package:
+        name: python3-pip
+        state: present
+        update_cache: true
+
+    - name: Install docker sdk
+      pip:
+        name: docker
+
+    - name: Add user ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: install aws cli
+      get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /home/ec2-user/awscliv2.zip
+
+    - name: unzip zip file
+      unarchive:
+        src: /home/ec2-user/awscliv2.zip
+        dest: /home/ec2-user
+        remote_src: True
+
+    - name: run the awscli
+      shell: ./aws/install
+
+    - name: log in to AWS ec2-user
+      shell: |
+        export PATH=/usr/local/bin:$PATH
+        source ~/.bash_profile
+        aws ecr get-login-password --region {{ aws_region }} | docker login --username AWS --password-stdin {{ ecr_registry }}
+
+- name: postgre database config
+  hosts: _ansible_postgresql
+  become: true
+  vars:
+    postgre_container: /home/ec2-user/postgresql
+    container_name: rumeysa_postgre
+    image_name: 392530415763.dkr.ecr.us-east-1.amazonaws.com/rumeysa-repo/todo-app:postgr
+  tasks:
+    - name: remove {{ container_name }} container and {{ image_name }} if exists
+      shell: "docker ps -q --filter 'name={{ container_name }}' && docker stop {{ container_name }} && docker rm -fv {{ container_name }} && docker image rm -f {{ image_name }} || echo 'Not Found'"
+
+    - name: Launch postgresql docker container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_PASSWORD: "Pp123456789"
+        volumes:
+          - /db-data:/var/lib/postgresql/data
+
+- name: Nodejs Server configuration
+  hosts: _ansible_nodejs
+  become: true
+  vars:
+    container_path: /home/ec2-user/nodejs
+    container_name: rumeysa_nodejs
+    image_name: 392530415763.dkr.ecr.us-east-1.amazonaws.com/rumeysa-repo/todo-app:nodejs
+  tasks:
+    - name: remove {{ container_name }} container and {{ image_name }} if exists
+      shell: "docker ps -q --filter 'name={{ container_name }}' && docker stop {{ container_name }} && docker rm -fv {{ container_name }} && docker image rm -f {{ image_name }} || echo 'Not Found'"
+
+    - name: Launch postgresql docker container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        ports:
+          - "5000:5000"
+
+- name: React UI Server configuration
+  hosts: _ansible_react
+  become: true
+  vars:
+    container_path: /home/ec2-user/react
+    container_name: rumeysa_react
+    image_name: 392530415763.dkr.ecr.us-east-1.amazonaws.com/rumeysa-repo/todo-app:react
+  tasks:
+    - name: remove {{ container_name }} container and {{ image_name }} image if exists
+      shell: "docker ps -q --filter 'name={{ container_name }}' && docker stop {{ container_name }} && docker rm -fv {{ container_name }} && docker image rm -f {{ image_name }} || echo 'Not Found'"
+
+    - name: Launch react docker container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        ports:
+          - "3000:3000"
