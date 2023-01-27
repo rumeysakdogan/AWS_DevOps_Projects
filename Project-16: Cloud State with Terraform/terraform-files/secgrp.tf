@@ -30,7 +30,7 @@ resource "aws_security_group" "vprofile-bastion-sg" {
     from_port   = 22
     protocol    = "tcp"
     to_port     = 22
-    cidr_blocks = [var.MyIP]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
