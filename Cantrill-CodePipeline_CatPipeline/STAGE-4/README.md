@@ -6,7 +6,7 @@ In this stage, you will configure automated deployment of the cat pipeline appli
 
 ## Configure a load balancer
 
-First, you're going to create a load balancer which will be the entry point for the containerised application
+First, you're going to create a load balancer which will be the entry point for the containerized application
 
 Go to the EC2 Console (https://us-east-1.console.aws.amazon.com/ec2/v2/home?region=us-east-1#Home:) then Load Balancing -> Load Balancers -> Create Load Balancer.  
 Create an application load balancer.  
@@ -73,7 +73,6 @@ for `Load balancer name` pick `catpipeline`
 for `container to load balance` select 'catpipeline:80:80' and click `Add to load balancer`
 for `Production listener port` select `80:HTTP` from the dropdown
 for `Target group name` pick `catpipelineA-TG`  
-Next
 Next
 Create Service
 View Service
