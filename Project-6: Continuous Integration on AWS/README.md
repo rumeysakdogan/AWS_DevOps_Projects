@@ -210,4 +210,4 @@ Time to run our CodePipeline.
 
 ### Step-8: Validate CodePipeline
 
-We can make some changes in README file of source code, onc we push the changes CloudWatch will detect the changes and Notification event will trigger Pipeline.
+We can make some changes in README file of source code, once we push the changes CloudWatch will detect the changes and Notification event will trigger Pipeline.
